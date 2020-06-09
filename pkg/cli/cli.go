@@ -15,7 +15,7 @@ import (
 )
 
 const flagListen = "listen"
-const flagGitHubEnterpriseURL = "github-enterprise-url"
+const flagGitHubURL = "github-url"
 const flagRepoOwner = "repo-owner"
 const flagRepo = "repo"
 const flagLabels = "labels"
@@ -42,48 +42,56 @@ func App() *cli.App {
 		},
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flagListen,
-				Value: ":8080",
-				Usage: "HTTP listen on",
+				Name:    flagListen,
+				Value:   ":8080",
+				Usage:   "HTTP listen on",
+				EnvVars: []string{"ATG_LISTEN"},
 			},
 			&cli.StringFlag{
-				Name:  flagGitHubEnterpriseURL,
-				Usage: "GitHub Enterprise URL (e.g. https://github.example.com)",
+				Name:    flagGitHubURL,
+				Usage:   "GitHub Enterprise URL (e.g. https://github.example.com)",
+				EnvVars: []string{"ATG_GITHUB_URL"},
 			},
 			&cli.StringFlag{
 				Name:     flagRepoOwner,
 				Required: true,
 				Usage:    "Repository owner",
+				EnvVars:  []string{"ATG_REPO_OWNER"},
 			},
 			&cli.StringFlag{
 				Name:     flagRepo,
 				Required: true,
 				Usage:    "Repository",
+				EnvVars:  []string{"ATG_REPO"},
 			},
 			&cli.StringSliceFlag{
-				Name:  flagLabels,
-				Usage: "Issue labels",
+				Name:    flagLabels,
+				Usage:   "Issue labels",
+				EnvVars: []string{"ATG_LABELS"},
 			},
 			&cli.StringFlag{
 				Name:     flagBodyTemplateFile,
 				Required: true,
 				Usage:    "Body template file",
+				EnvVars:  []string{"ATG_BODY_TEMPLATE_FILE"},
 			},
 			&cli.StringFlag{
 				Name:     flagTitleTemplateFile,
 				Required: true,
 				Usage:    "Title template file",
+				EnvVars:  []string{"ATG_TITLE_TEMPLATE_FILE"},
 			},
 			&cli.StringFlag{
-				Name:  flagAlertIDTemplate,
-				Value: "{{.Payload.GroupKey}}",
-				Usage: "Title template file",
+				Name:    flagAlertIDTemplate,
+				Value:   "{{.Payload.GroupKey}}",
+				Usage:   "Alert ID template",
+				EnvVars: []string{"ATG_ALERT_ID_TEMPLATE"},
 			},
 			&cli.StringFlag{
 				Name:     flagGitHubToken,
 				Required: true,
-				EnvVars:  []string{"GITHUB_TOKEN"},
 				Usage:    "GitHub API token (command line argument is not recommended)",
+				EnvVars:  []string{"ATG_GITHUB_TOKEN"},
 			},
 		},
 	}
@@ -128,7 +136,7 @@ func templateFromString(s string) (*template.Template, error) {
 }
 
 func action(c *cli.Context) error {
-	githubClient, err := buildGitHubClient(c.String(flagGitHubEnterpriseURL), c.String(flagGitHubToken))
+	githubClient, err := buildGitHubClient(c.String(flagGitHubURL), c.String(flagGitHubToken))
 	if err != nil {
 		return err
 	}
