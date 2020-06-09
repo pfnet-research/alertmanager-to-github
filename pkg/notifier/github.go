@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v32/github"
 	"github.com/rs/zerolog/log"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"strings"
 )
 
 type GitHubNotifier struct {
@@ -24,13 +26,22 @@ func NewGitHub() (*GitHubNotifier, error) {
 	return &GitHubNotifier{}, nil
 }
 
-func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload) error {
+func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, params gin.Params) error {
+	repo := n.Repo
+	owner := n.Owner
+
+	if r, ok := params.Get("repo"); ok {
+		parts := strings.SplitN(r, "/", 2)
+		owner = parts[0]
+		repo = parts[1]
+	}
+
 	alertID, err := n.getAlertID(payload)
 	if err != nil {
 		return err
 	}
 
-	query := fmt.Sprintf(`repo:%s/%s "%s"`, n.Owner, n.Repo, alertID)
+	query := fmt.Sprintf(`repo:%s/%s "%s"`, owner, repo, alertID)
 	searchResult, _, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 	})
@@ -64,13 +75,13 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	}
 
 	if issue == nil {
-		issue, _, err = n.GitHubClient.Issues.Create(ctx, n.Owner, n.Repo, req)
+		issue, _, err = n.GitHubClient.Issues.Create(ctx, owner, repo, req)
 		if err != nil {
 			return err
 		}
 		log.Info().Msg("created an issue")
 	} else {
-		issue, _, err = n.GitHubClient.Issues.Edit(ctx, n.Owner, n.Repo, issue.GetNumber(), req)
+		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
 		if err != nil {
 			return err
 		}
@@ -91,7 +102,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		req = &github.IssueRequest{
 			State: github.String(desiredState),
 		}
-		issue, _, err = n.GitHubClient.Issues.Edit(ctx, n.Owner, n.Repo, issue.GetNumber(), req)
+		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
 		if err != nil {
 			return err
 		}

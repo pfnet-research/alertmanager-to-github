@@ -8,4 +8,3 @@ docker-build:
 .PHONY: docker-push
 docker-push: docker-build
 	docker push "$(IMAGE)"
-

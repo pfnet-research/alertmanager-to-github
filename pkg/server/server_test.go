@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"net/http/httptest"
@@ -14,7 +15,7 @@ type dummyNotifier struct {
 	payloads []*types.WebhookPayload
 }
 
-func (n *dummyNotifier) Notify(ctx context.Context, payload *types.WebhookPayload) error {
+func (n *dummyNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, params gin.Params) error {
 	n.payloads = append(n.payloads, payload)
 	return nil
 }
