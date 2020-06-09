@@ -1,0 +1,3 @@
+# alertmanager-to-github
+
+TBW
