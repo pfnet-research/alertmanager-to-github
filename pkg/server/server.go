@@ -38,7 +38,7 @@ func (s *Server) v1Webhook(c *gin.Context) {
 	log.Debug().Interface("payload", payload).Msg("/v1/webhook")
 
 	ctx := context.TODO()
-	if err := s.Notifier.Notify(ctx, payload, c.Params); err != nil {
+	if err := s.Notifier.Notify(ctx, payload, c.Request.URL.Query()); err != nil {
 		log.Error().Err(err).Msg("error notifying")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

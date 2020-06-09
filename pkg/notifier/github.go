@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v32/github"
 	"github.com/rs/zerolog/log"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"net/url"
 	"strings"
 )
 
@@ -26,11 +26,12 @@ func NewGitHub() (*GitHubNotifier, error) {
 	return &GitHubNotifier{}, nil
 }
 
-func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, params gin.Params) error {
+func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
+	log.Info().Interface("query", queryParams).Msg("")
 	repo := n.Repo
 	owner := n.Owner
 
-	if r, ok := params.Get("repo"); ok {
+	if r := queryParams.Get("repo"); r != "" {
 		parts := strings.SplitN(r, "/", 2)
 		owner = parts[0]
 		repo = parts[1]
