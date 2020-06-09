@@ -1,0 +1,10 @@
+route:
+  receiver: webhook
+  group_by: ['severity']
+  group_wait: 1s
+
+receivers:
+- name: 'webhook'
+  webhook_configs:
+  - url: 'http://127.0.0.1:8000/v1/webhook'
+

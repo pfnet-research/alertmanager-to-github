@@ -1,0 +1,19 @@
+groups:
+- name: example
+  rules:
+  - alert: Alert1
+    expr: '1 < bool 2'
+    for: 1s
+    labels:
+      severity: page
+      category: web
+    annotations:
+      summary: 2 is more than 1
+  - alert: Alert2
+    expr: '1 < bool 3'
+    for: 1s
+    labels:
+      severity: page
+      category: db
+    annotations:
+      summary: 3 is more than 1
