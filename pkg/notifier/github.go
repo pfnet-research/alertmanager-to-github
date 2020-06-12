@@ -3,6 +3,7 @@ package notifier
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"github.com/google/go-github/v32/github"
 	"github.com/rs/zerolog/log"
@@ -17,8 +18,6 @@ type GitHubNotifier struct {
 	BodyTemplate    *template.Template
 	TitleTemplate   *template.Template
 	AlertIDTemplate *template.Template
-	Owner           string
-	Repo            string
 	Labels          []string
 }
 
@@ -28,14 +27,14 @@ func NewGitHub() (*GitHubNotifier, error) {
 
 func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
 	log.Info().Interface("query", queryParams).Msg("")
-	repo := n.Repo
-	owner := n.Owner
 
-	if r := queryParams.Get("repo"); r != "" {
-		parts := strings.SplitN(r, "/", 2)
-		owner = parts[0]
-		repo = parts[1]
+	ownerAndRepo := queryParams.Get("repo")
+	if ownerAndRepo == "" {
+		return errors.New("repo query parameter is required")
 	}
+	parts := strings.SplitN(ownerAndRepo, "/", 2)
+	owner := parts[0]
+	repo := parts[1]
 
 	alertID, err := n.getAlertID(payload)
 	if err != nil {

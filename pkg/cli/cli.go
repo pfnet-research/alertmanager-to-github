@@ -16,8 +16,6 @@ import (
 
 const flagListen = "listen"
 const flagGitHubURL = "github-url"
-const flagRepoOwner = "repo-owner"
-const flagRepo = "repo"
 const flagLabels = "labels"
 const flagBodyTemplateFile = "body-template-file"
 const flagTitleTemplateFile = "title-template-file"
@@ -51,18 +49,6 @@ func App() *cli.App {
 				Name:    flagGitHubURL,
 				Usage:   "GitHub Enterprise URL (e.g. https://github.example.com)",
 				EnvVars: []string{"ATG_GITHUB_URL"},
-			},
-			&cli.StringFlag{
-				Name:     flagRepoOwner,
-				Required: true,
-				Usage:    "Repository owner",
-				EnvVars:  []string{"ATG_REPO_OWNER"},
-			},
-			&cli.StringFlag{
-				Name:     flagRepo,
-				Required: true,
-				Usage:    "Repository",
-				EnvVars:  []string{"ATG_REPO"},
 			},
 			&cli.StringSliceFlag{
 				Name:    flagLabels,
@@ -161,8 +147,6 @@ func action(c *cli.Context) error {
 		return err
 	}
 	nt.GitHubClient = githubClient
-	nt.Repo = c.String(flagRepo)
-	nt.Owner = c.String(flagRepoOwner)
 	nt.Labels = c.StringSlice(flagLabels)
 	nt.BodyTemplate = bodyTemplate
 	nt.TitleTemplate = titleTemplate
