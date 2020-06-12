@@ -36,6 +36,11 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	owner := parts[0]
 	repo := parts[1]
 
+	labels := n.Labels
+	if l := queryParams.Get("labels"); l != "" {
+		labels = strings.Split(l, ",")
+	}
+
 	alertID, err := n.getAlertID(payload)
 	if err != nil {
 		return err
@@ -71,7 +76,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	req := &github.IssueRequest{
 		Title:  &title,
 		Body:   &body,
-		Labels: &n.Labels,
+		Labels: &labels,
 	}
 
 	if issue == nil {
