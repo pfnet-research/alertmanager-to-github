@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-to-github
+spec:
+  selector:
+    app.kubernetes.io/name: alertmanager-to-github
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

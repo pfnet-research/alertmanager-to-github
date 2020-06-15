@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-to-github
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager-to-github
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager-to-github
+    spec:
+      containers:
+      - image: alertmanager-to-github
+        name: main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ATG_LISTEN
+          value: ':8080'
+        envFrom:
+        - secretRef:
+            name: env # env secret has ATG_GITHUB_TOKEN
