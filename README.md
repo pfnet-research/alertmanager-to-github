@@ -2,6 +2,12 @@
 
 This receives webhook requests from Alertmanager and creates GitHub issues.
 
+It does:
+* open an issue on a new alert
+* close the issue when the alert is in resolved status
+* reopen the issue when the alert is in firing status
+  * alerts are identified by `groupKey`; configurable via `--alert-id-template` option
+
 <kbd>![screen shot](doc/screenshot.png)</kbd>
 
 ## Installation
@@ -69,7 +75,7 @@ To create issues in GHE, set `--github-url` option or `ATG_GITHUB_URL` environme
 
 ### Customize issue title and body
 
-Issue title and body are rendered from [Go template](https://golang.org/pkg/text/template/). In the templates, you can use the following variables and functions.
+Issue title and body are rendered from [Go template](https://golang.org/pkg/text/template/) and you can use custom templates via `--body-template-file` and `--title-template-file` options. In the templates, you can use the following variables and functions.
 
 * Variables
     * `.Payload`: Webhook payload incoming to this receiver. For more information, see `WebhookPayload` in [pkg/types/payload.go](https://github.com/pfnet-research/alertmanager-to-github/blob/master/pkg/types/payload.go)
