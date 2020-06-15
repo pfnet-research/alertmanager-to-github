@@ -3,7 +3,6 @@ package notifier
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"github.com/google/go-github/v32/github"
 	"github.com/rs/zerolog/log"
@@ -26,13 +25,8 @@ func NewGitHub() (*GitHubNotifier, error) {
 }
 
 func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
-	ownerAndRepo := queryParams.Get("repo")
-	if ownerAndRepo == "" {
-		return errors.New("repo query parameter is required")
-	}
-	parts := strings.SplitN(ownerAndRepo, "/", 2)
-	owner := parts[0]
-	repo := parts[1]
+	owner := queryParams.Get("owner")
+	repo := queryParams.Get("repo")
 
 	labels := n.Labels
 	if l := queryParams.Get("labels"); l != "" {
