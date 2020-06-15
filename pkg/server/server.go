@@ -35,8 +35,6 @@ func (s *Server) v1Webhook(c *gin.Context) {
 		return
 	}
 
-	log.Debug().Interface("payload", payload).Msg("/v1/webhook")
-
 	ctx := context.TODO()
 	if err := s.Notifier.Notify(ctx, payload, c.Request.URL.Query()); err != nil {
 		log.Error().Err(err).Msg("error notifying")

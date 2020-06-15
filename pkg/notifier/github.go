@@ -26,8 +26,6 @@ func NewGitHub() (*GitHubNotifier, error) {
 }
 
 func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
-	log.Info().Interface("query", queryParams).Msg("")
-
 	ownerAndRepo := queryParams.Get("repo")
 	if ownerAndRepo == "" {
 		return errors.New("repo query parameter is required")
