@@ -2,7 +2,7 @@
 
 This receives webhook requests from Alertmanager and creates GitHub issues.
 
-![Screenshot](doc/screenshot.png)
+<kbd>![screen shot](doc/screenshot.png)</kbd>
 
 ## Installation
 
