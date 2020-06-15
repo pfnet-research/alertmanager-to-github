@@ -21,7 +21,7 @@ func Parse(s string) (*Template, error) {
 	funcs := map[string]interface{}{
 		"urlQueryEscape": url.QueryEscape,
 		"json":           marshalToJSON,
-		"timeNow":            timeNow,
+		"timeNow":        timeNow,
 	}
 	t, err := template.New("template").Funcs(funcs).Parse(s)
 	if err != nil {

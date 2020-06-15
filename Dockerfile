@@ -7,13 +7,14 @@ RUN go mod download
 
 COPY . /workspace
 
-RUN go build -o bin/out .
+RUN go get github.com/rakyll/statik
+RUN make build
 
 FROM ubuntu:20.04
 WORKDIR /
 RUN apt-get update && apt-get install -y \
     ca-certificates \
  && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /workspace/bin/out /usr/local/bin/alertmanager-to-github
+COPY --from=builder /workspace/bin/alertmanager-to-github /usr/local/bin/alertmanager-to-github
 ENTRYPOINT ["/usr/local/bin/alertmanager-to-github", "start"]
 

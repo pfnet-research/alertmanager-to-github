@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/go-github/v32/github"
+	"github.com/rakyll/statik/fs"
 	"github.com/urfave/cli/v2"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
+	_ "github.com/pfnet-research/alertmanager-to-github/pkg/statik"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"golang.org/x/oauth2"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -120,16 +123,14 @@ func App() *cli.App {
 						EnvVars: []string{"ATG_LABELS"},
 					},
 					&cli.StringFlag{
-						Name:     flagBodyTemplateFile,
-						Required: true,
-						Usage:    "Body template file",
-						EnvVars:  []string{"ATG_BODY_TEMPLATE_FILE"},
+						Name:    flagBodyTemplateFile,
+						Usage:   "Body template file",
+						EnvVars: []string{"ATG_BODY_TEMPLATE_FILE"},
 					},
 					&cli.StringFlag{
-						Name:     flagTitleTemplateFile,
-						Required: true,
-						Usage:    "Title template file",
-						EnvVars:  []string{"ATG_TITLE_TEMPLATE_FILE"},
+						Name:    flagTitleTemplateFile,
+						Usage:   "Title template file",
+						EnvVars: []string{"ATG_TITLE_TEMPLATE_FILE"},
 					},
 					&cli.StringFlag{
 						Name:    flagAlertIDTemplate,
@@ -192,6 +193,14 @@ func buildGitHubClient(githubURL string, token string) (*github.Client, error) {
 	return client, nil
 }
 
+func templateFromReader(r io.Reader) (*template.Template, error) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return templateFromString(string(b))
+}
+
 func templateFromFile(path string) (*template.Template, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -209,17 +218,40 @@ func templateFromString(s string) (*template.Template, error) {
 }
 
 func actionStart(c *cli.Context) error {
+	statikFS, err := fs.New()
+	if err != nil {
+		return err
+	}
+
 	githubClient, err := buildGitHubClient(c.String(flagGitHubURL), c.String(flagGitHubToken))
 	if err != nil {
 		return err
 	}
 
-	bodyTemplate, err := templateFromFile(c.String(flagBodyTemplateFile))
+	openReader := func(path string, defaultFile string) (io.ReadCloser, error) {
+		if path == "" {
+			return statikFS.Open(defaultFile)
+		} else {
+			return os.Open(path)
+		}
+	}
+
+	bodyReader, err := openReader(c.String(flagBodyTemplateFile), "/body.tmpl")
+	if err != nil {
+		return err
+	}
+	defer bodyReader.Close()
+	bodyTemplate, err := templateFromReader(bodyReader)
 	if err != nil {
 		return err
 	}
 
-	titleTemplate, err := templateFromFile(c.String(flagTitleTemplateFile))
+	titleReader, err := openReader(c.String(flagTitleTemplateFile), "/title.tmpl")
+	if err != nil {
+		return err
+	}
+	defer titleReader.Close()
+	titleTemplate, err := templateFromReader(titleReader)
 	if err != nil {
 		return err
 	}
