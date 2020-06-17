@@ -1,5 +1,7 @@
 # alertmanager-to-github
 
+[![Docker Repository on Quay](https://quay.io/repository/pfnet-alertmanager-to-github/alertmanager-to-github/status "Docker Repository on Quay")](https://quay.io/repository/pfnet-alertmanager-to-github/alertmanager-to-github)
+
 This receives webhook requests from Alertmanager and creates GitHub issues.
 
 It does:
