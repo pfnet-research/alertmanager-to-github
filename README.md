@@ -12,6 +12,12 @@ It does:
 
 ## Installation
 
+### Docker image
+
+```
+docker pull quay.io/pfnet-alertmanager-to-github/alertmanager-to-github:v0.0.1
+```
+
 ### go get
 
 ```
