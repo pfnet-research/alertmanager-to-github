@@ -12,14 +12,10 @@ It does:
 
 ## Installation
 
-### Docker
-
-Auto-built image is available at (TBW)
-
 ### go get
 
 ```
-go get TBW
+go get github.com/pfnet-research/alertmanager-to-github
 ```
 
 ## Usage
