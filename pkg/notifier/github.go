@@ -5,10 +5,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/google/go-github/v32/github"
-	"github.com/rs/zerolog/log"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"github.com/rs/zerolog/log"
 	"net/url"
+	"sort"
 	"strings"
 )
 
@@ -111,6 +112,44 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		}
 
 		log.Info().Str("state", desiredState).Msg("updated state of the issue")
+	}
+
+	if err := n.cleanupIssues(ctx, owner, repo, alertID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID string) error {
+	query := fmt.Sprintf(`repo:%s/%s "%s"`, owner, repo, alertID)
+	searchResult, _, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
+		TextMatch: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	issues := searchResult.Issues
+	if len(issues) <= 1 {
+		return nil
+	}
+
+	sort.Slice(issues, func(i, j int) bool {
+		return issues[i].GetCreatedAt().Before(issues[j].GetCreatedAt())
+	})
+
+	latestIssue := issues[len(issues)-1]
+	oldIssues := issues[:len(issues)-1]
+	for _, issue := range oldIssues {
+		req := &github.IssueRequest{
+			Body:  github.String(fmt.Sprintf("duplicated %s", latestIssue.GetHTMLURL())),
+			State: github.String("closed"),
+		}
+		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
