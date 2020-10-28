@@ -52,6 +52,12 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	} else if searchResult.GetTotal() > 1 {
 		log.Warn().Interface("searchResultTotal", searchResult.GetTotal()).
 			Str("groupKey", payload.GroupKey).Msg("too many search result")
+
+		for _, i := range searchResult.Issues {
+			if issue == nil || issue.GetCreatedAt().Before(i.GetCreatedAt()) {
+				issue = i
+			}
+		}
 	}
 
 	body, err := n.BodyTemplate.Execute(payload)
