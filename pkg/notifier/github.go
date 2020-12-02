@@ -85,6 +85,23 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		}
 		log.Info().Msg("created an issue")
 	} else {
+		// we have to merge existing labels because Edit api replaces its  labels
+		mergedLabels := []string{}
+		labelSet := map[string]bool{}
+		for _, l := range issue.Labels {
+			name := *l.Name
+			if !labelSet[name] {
+				labelSet[name] = true
+				mergedLabels = append(mergedLabels, name)
+			}
+		}
+		for _, l := range labels {
+			if !labelSet[l] {
+				labelSet[l] = true
+				mergedLabels = append(mergedLabels, l)
+			}
+		}
+		req.Labels = &mergedLabels
 		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
 		if err != nil {
 			return err
