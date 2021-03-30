@@ -46,7 +46,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	if err != nil {
 		return err
 	}
-	if err = handleSearchResponse(response); err != nil {
+	if err = checkSearchResponse(response); err != nil {
 		return err
 	}
 
@@ -149,7 +149,7 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 	if err != nil {
 		return err
 	}
-	if err = handleSearchResponse(response); err != nil {
+	if err = checkSearchResponse(response); err != nil {
 		return err
 	}
 
@@ -187,13 +187,9 @@ func (n *GitHubNotifier) getAlertID(payload *types.WebhookPayload) (string, erro
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(id))), nil
 }
 
-func handleSearchResponse(response *github.Response) error {
-	if response.StatusCode != 200 {
-		msg := "failed to search issues"
-		log.Warn().Str("status", response.Status).
-			Int("statusCode", response.StatusCode).
-			Msg(msg)
-		return fmt.Errorf("%s: %s", msg, response.StatusCode)
+func checkSearchResponse(response *github.Response) error {
+	if response.StatusCode < 200 || 300 <= response.StatusCode {
+		return fmt.Errorf("issue search returned %d", response.StatusCode)
 	}
 	return nil
 }
