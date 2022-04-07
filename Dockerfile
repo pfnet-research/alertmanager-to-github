@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . /workspace
 
-RUN go get github.com/rakyll/statik
+RUN go install github.com/rakyll/statik
 RUN make build
 
 FROM ubuntu:20.04
