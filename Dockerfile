@@ -1,19 +1,27 @@
-FROM golang:1.18 as builder
-
+# syntax = docker/dockerfile:1
+FROM golang:1.18 AS base
 WORKDIR /workspace
-COPY go.mod go.mod
-COPY go.sum go.sum
-RUN go mod download
+ENV CGO_ENABLED=0
+COPY go.* .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-COPY . /workspace
+FROM base AS unit-test
+RUN --mount=target=. \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go test -v ./...
 
-RUN make build
+FROM base AS build
+RUN --mount=target=. \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -o /out/alertmanager-to-github .
 
-FROM ubuntu:20.04
-WORKDIR /
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /workspace/bin/alertmanager-to-github /usr/local/bin/alertmanager-to-github
-ENTRYPOINT ["/usr/local/bin/alertmanager-to-github", "start"]
+FROM scratch AS export
+COPY --from=build /out/alertmanager-to-github /
 
+FROM gcr.io/distroless/static:nonroot
+COPY --from=build /out/alertmanager-to-github /
+ENTRYPOINT ["/alertmanager-to-github"]
+CMD ["start"]
