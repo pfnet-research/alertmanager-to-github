@@ -1,4 +1,4 @@
-FROM golang:1.14 as builder
+FROM golang:1.18 as builder
 
 WORKDIR /workspace
 COPY go.mod go.mod
@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . /workspace
 
-RUN go get github.com/rakyll/statik
+RUN go install github.com/rakyll/statik
 RUN make build
 
 FROM ubuntu:20.04
