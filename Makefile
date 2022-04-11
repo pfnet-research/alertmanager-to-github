@@ -11,6 +11,10 @@ build:
 test:
 	$(DOCKER_BUILD) --target unit-test .
 
+.PHONY: lint
+lint:
+	$(DOCKER_BUILD) --target lint .
+
 .PHONY: clean
 clean:
 	rm -rf bin
