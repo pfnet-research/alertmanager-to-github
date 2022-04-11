@@ -2,21 +2,21 @@ package cli
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-github/v32/github"
-	"github.com/rakyll/statik/fs"
-	"github.com/urfave/cli/v2"
-	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
-	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
-	_ "github.com/pfnet-research/alertmanager-to-github/pkg/statik"
-	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
-	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
-	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/google/go-github/v32/github"
+	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
+	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
+	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
+	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/oauth2"
 )
 
 const flagListen = "listen"
@@ -90,6 +90,9 @@ const defaultPayload = `{
     }
   ]
 }`
+
+//go:embed templates/*.tmpl
+var templates embed.FS
 
 func App() *cli.App {
 	return &cli.App{
@@ -218,25 +221,12 @@ func templateFromString(s string) (*template.Template, error) {
 }
 
 func actionStart(c *cli.Context) error {
-	statikFS, err := fs.New()
-	if err != nil {
-		return err
-	}
-
 	githubClient, err := buildGitHubClient(c.String(flagGitHubURL), c.String(flagGitHubToken))
 	if err != nil {
 		return err
 	}
 
-	openReader := func(path string, defaultFile string) (io.ReadCloser, error) {
-		if path == "" {
-			return statikFS.Open(defaultFile)
-		} else {
-			return os.Open(path)
-		}
-	}
-
-	bodyReader, err := openReader(c.String(flagBodyTemplateFile), "/body.tmpl")
+	bodyReader, err := openReader(c.String(flagBodyTemplateFile), "templates/body.tmpl")
 	if err != nil {
 		return err
 	}
@@ -246,7 +236,7 @@ func actionStart(c *cli.Context) error {
 		return err
 	}
 
-	titleReader, err := openReader(c.String(flagTitleTemplateFile), "/title.tmpl")
+	titleReader, err := openReader(c.String(flagTitleTemplateFile), "templates/title.tmpl")
 	if err != nil {
 		return err
 	}
@@ -309,4 +299,12 @@ func actionTestTemplate(c *cli.Context) error {
 	fmt.Printf("%s\n", s)
 
 	return nil
+}
+
+func openReader(path string, defaultFile string) (io.ReadCloser, error) {
+	if path == "" {
+		return templates.Open(defaultFile)
+	} else {
+		return os.Open(path)
+	}
 }
