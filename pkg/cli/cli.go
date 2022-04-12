@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v43/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
