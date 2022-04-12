@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v43/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/rs/zerolog/log"
