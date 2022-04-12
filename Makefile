@@ -1,17 +1,23 @@
 TAG=$(shell git rev-parse HEAD)
 IMAGE=internal-registry.example.com/alertmanager-to-github:$(TAG)
 
+DOCKER_BUILD ?= DOCKER_BUILDKIT=1 docker build --progress=plain
+
 .PHONY: build
 build:
-	go build -o bin/alertmanager-to-github .
+	$(DOCKER_BUILD) --target export --output bin/ .
 
 .PHONY: test
 test:
-	go test -v ./...
+	$(DOCKER_BUILD) --target unit-test .
+
+.PHONY: clean
+clean:
+	rm -rf bin
 
 .PHONY: docker-build
 docker-build:
-	docker build -t "$(IMAGE)" .
+	$(DOCKER_BUILD) -t "$(IMAGE)" .
 
 .PHONY: docker-push
 docker-push: docker-build
