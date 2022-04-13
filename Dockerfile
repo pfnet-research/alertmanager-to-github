@@ -22,15 +22,16 @@ RUN --mount=target=. \
     go test -v ./...
 
 FROM base AS build
+ARG TARGETOS TARGETARCH
 RUN --mount=target=. \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go build -o /out/alertmanager-to-github .
+    GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/alertmanager-to-github .
 
 FROM scratch AS export
 COPY --from=build /out/alertmanager-to-github /
 
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot-${TARGETARCH}
 COPY --from=build /out/alertmanager-to-github /
 ENTRYPOINT ["/alertmanager-to-github"]
 CMD ["start"]
