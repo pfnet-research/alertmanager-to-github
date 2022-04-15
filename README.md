@@ -1,7 +1,5 @@
 # alertmanager-to-github
 
-[![Docker Repository on Quay](https://quay.io/repository/pfnet-alertmanager-to-github/alertmanager-to-github/status "Docker Repository on Quay")](https://quay.io/repository/pfnet-alertmanager-to-github/alertmanager-to-github)
-
 This receives webhook requests from Alertmanager and creates GitHub issues.
 
 It does:
@@ -17,7 +15,7 @@ It does:
 ### Docker image
 
 ```
-docker pull quay.io/pfnet-alertmanager-to-github/alertmanager-to-github:v0.0.1
+docker pull ghcr.io/pfnet-research/alertmanager-to-github:v0.0.2
 ```
 
 ### go get
@@ -93,4 +91,3 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
 ### Kubernetes
 
 https://github.com/pfnet-research/alertmanager-to-github/tree/master/example/kubernetes
-
