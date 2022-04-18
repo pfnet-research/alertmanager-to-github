@@ -1,5 +1,5 @@
-TAG=$(shell git describe --tags --always --dirty)
-IMAGE=internal-registry.example.com/alertmanager-to-github:$(TAG)
+TAG := $(shell git describe --tags --always --dirty)
+IMAGE ?= ghcr.io/pfnet-research/alertmanager-to-github:$(TAG)
 ARCH ?= amd64
 ALL_ARCH ?= amd64 arm64
 
