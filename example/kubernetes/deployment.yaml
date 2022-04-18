@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-to-github
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager-to-github
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager-to-github
+    spec:
+      containers:
+      - name: alertmanager-to-github
+        image: ghcr.io/superbrothers/alertmanager-to-github:v0.0.2
+        env:
+        - name: ATG_LISTEN
+          value: ':8080'
+        - name: ATG_GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: alertmanager-to-github
+              key: ATG_GITHUB_TOKEN
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
