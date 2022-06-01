@@ -4,13 +4,54 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"net/url"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/google/go-github/v43/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
-	"net/url"
-	"sort"
-	"strings"
+)
+
+
+var (
+	rateLimit = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "github_api_rate_limit",
+			Help: "The limit of API requests the client can make.",
+		},
+		// The GitHub API this rate limit applies to. e.g. "search" or "issues"
+		[]string{"api"},
+	)
+	rateRemaining = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "github_api_rate_remaining",
+			Help: "The remaining API requests the client can make until reset time.",
+		},
+		// The GitHub API this rate limit applies to. e.g. "search" or "issues"
+		[]string{"api"},
+	)
+	rateResetTime = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "github_api_rate_reset",
+			Help: "The time when the current rate limit will reset.",
+		},
+		// The GitHub API this rate limit applies to. e.g. "search" or "issues"
+		[]string{"api"},
+	)
+	operationCount = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "github_api_requests_total",
+			Help: "Number of API operations performed.",
+		},
+		// api: The GitHub API this rate limit applies to. e.g. "search" or "issues"
+		// status: The status code of the response
+		[]string{"api", "status"},
+	)
 )
 
 type GitHubNotifier struct {
@@ -43,6 +84,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 	})
+	updateGithubApiMetrics("search", response, err)
 	if err != nil {
 		return err
 	}
@@ -82,7 +124,8 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	}
 
 	if issue == nil {
-		issue, _, err = n.GitHubClient.Issues.Create(ctx, owner, repo, req)
+		issue, response, err = n.GitHubClient.Issues.Create(ctx, owner, repo, req)
+		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
@@ -106,6 +149,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		}
 		req.Labels = &mergedLabels
 		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
+		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
@@ -126,7 +170,8 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		req = &github.IssueRequest{
 			State: github.String(desiredState),
 		}
-		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
+		issue, response, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
+		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
@@ -146,6 +191,7 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 	})
+	updateGithubApiMetrics("search", response, err)
 	if err != nil {
 		return err
 	}
@@ -169,7 +215,8 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 			Body:  github.String(fmt.Sprintf("duplicated %s", latestIssue.GetHTMLURL())),
 			State: github.String("closed"),
 		}
-		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
+		issue, response, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
+		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
@@ -192,4 +239,12 @@ func checkSearchResponse(response *github.Response) error {
 		return fmt.Errorf("issue search returned %d", response.StatusCode)
 	}
 	return nil
+}
+
+
+func updateGithubApiMetrics(apiName string, resp *github.Response, err error) {
+	rateLimit.WithLabelValues(apiName).Set(float64(resp.Rate.Limit))
+	rateRemaining.WithLabelValues(apiName).Set(float64(resp.Rate.Remaining))
+	rateResetTime.WithLabelValues(apiName).Set(float64(resp.Rate.Reset.UTC().Unix()))
+	operationCount.WithLabelValues(apiName, strconv.Itoa(resp.StatusCode)).Inc()
 }
