@@ -3,10 +3,11 @@
 This receives webhook requests from Alertmanager and creates GitHub issues.
 
 It does:
-* open an issue on a new alert
-* close the issue when the alert is in resolved status
-* reopen the issue when the alert is in firing status
-  * alerts are identified by `groupKey`; configurable via `--alert-id-template` option
+
+- open an issue on a new alert
+- close the issue when the alert is in resolved status
+- reopen the issue when the alert is in firing status
+  - alerts are identified by `groupKey`; configurable via `--alert-id-template` option
 
 <kbd>![screen shot](doc/screenshot.png)</kbd>
 
@@ -40,14 +41,15 @@ Add a receiver to Alertmanager config:
 
 ```yaml
 route:
-  receiver: 'togithub' # default
+  receiver: "togithub" # default
 
 receivers:
-- name: "togithub"
-  webhook_configs:
-  # Create issues in "bar" repo in "foo" organization.
-  # repo and owner parameters must be URL-encoded.
-  - url: 'http://localhost:8080/v1/webhook?owner=foo&repo=bar'
+  - name: "togithub"
+    webhook_configs:
+      # Create issues in "bar" repo in "foo" organization.
+      # these are the default values and can be overriden by labels on the alert
+      # repo and owner parameters must be URL-encoded.
+      - url: "http://localhost:8080/v1/webhook?owner=foo&repo=bar"
 ```
 
 ## Configuration
@@ -79,12 +81,32 @@ To create issues in GHE, set `--github-url` option or `ATG_GITHUB_URL` environme
 
 Issue title and body are rendered from [Go template](https://golang.org/pkg/text/template/) and you can use custom templates via `--body-template-file` and `--title-template-file` options. In the templates, you can use the following variables and functions.
 
-* Variables
-    * `.Payload`: Webhook payload incoming to this receiver. For more information, see `WebhookPayload` in [pkg/types/payload.go](https://github.com/pfnet-research/alertmanager-to-github/blob/master/pkg/types/payload.go)
-* Functions
-    * `urlQueryEscape`: Escape a string as a URL query
-    * `json`: Marshal an object to JSON string
-    * `timeNow`: Get current time
+- Variables
+  - `.Payload`: Webhook payload incoming to this receiver. For more information, see `WebhookPayload` in [pkg/types/payload.go](https://github.com/pfnet-research/alertmanager-to-github/blob/master/pkg/types/payload.go)
+- Functions
+  - `urlQueryEscape`: Escape a string as a URL query
+  - `json`: Marshal an object to JSON string
+  - `timeNow`: Get current time
+
+## Customize organisation and repository
+
+The organisation/repository where issues are raised can be customised per-alert by specifying the `owner` and/or `repo` labels on the alert.
+
+e.g.
+
+```yaml
+- alert: HighRequestLatency
+  expr: job:request_latency_seconds:mean5m{job="myjob"} > 0.5
+  for: 10m
+  labels:
+    severity: page
+    org: my-alternative-org
+    repo: specific-service-repository
+  annotations:
+    summary: High request latency
+```
+
+This mechanism has precedence over the receiver URL query parameters.
 
 ## Deployment
 

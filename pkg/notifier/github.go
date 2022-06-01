@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"net/url"
+	"sort"
+	"strings"
+
 	"github.com/google/go-github/v43/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/rs/zerolog/log"
-	"net/url"
-	"sort"
-	"strings"
 )
 
 type GitHubNotifier struct {
@@ -25,9 +26,30 @@ func NewGitHub() (*GitHubNotifier, error) {
 	return &GitHubNotifier{}, nil
 }
 
-func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
+func resolveRepository(payload *types.WebhookPayload, queryParams url.Values) (error, string, string) {
 	owner := queryParams.Get("owner")
 	repo := queryParams.Get("repo")
+
+	if payload.CommonLabels["owner"] != "" {
+		owner = payload.CommonLabels["owner"]
+	}
+	if payload.CommonLabels["repo"] != "" {
+		repo = payload.CommonLabels["repo"]
+	}
+	if owner == "" {
+		return fmt.Errorf("owner was not specified in either the webhook URL, or the alert labels"), "", ""
+	}
+	if repo == "" {
+		return fmt.Errorf("repo was not specified in either the webhook URL, or the alert labels"), "", ""
+	}
+	return nil, owner, repo
+}
+
+func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
+	err, owner, repo := resolveRepository(payload, queryParams)
+	if err != nil {
+		return err
+	}
 
 	labels := n.Labels
 	if l := queryParams.Get("labels"); l != "" {
