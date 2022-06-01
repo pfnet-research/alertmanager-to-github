@@ -2,13 +2,14 @@ package server
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"github.com/stretchr/testify/assert"
 )
 
 type dummyNotifier struct {
@@ -71,6 +72,17 @@ func TestV1Webhook(t *testing.T) {
 				},
 			},
 		})
+	}
+}
+
+func TestMetrics(t *testing.T) {
+	nt := &dummyNotifier{}
+	router := New(nt).Router()
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	router.ServeHTTP(w, req)
+	if !assert.Equal(t, 200, w.Code) {
+		t.Log(w.Body.String())
 	}
 }
 

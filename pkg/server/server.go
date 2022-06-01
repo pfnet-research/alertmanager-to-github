@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
-	"net/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -21,6 +23,7 @@ func New(notifier notifier.Notifier) (*Server) {
 
 func (s *Server) Router() *gin.Engine {
 	router := gin.Default()
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.POST("/v1/webhook", s.v1Webhook)
 
 	return router
