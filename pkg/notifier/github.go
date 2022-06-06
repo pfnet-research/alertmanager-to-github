@@ -136,7 +136,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	if err != nil {
 		return err
 	}
-	body += fmt.Sprintf("\n---\n(DO NOT MODIFY: %s )\n", alertID)
+	body += fmt.Sprintf("\n<!-- (UNIQUE ALERT ID, DO NOT MODIFY: %s ) -->\n", alertID)
 
 	title, err := n.TitleTemplate.Execute(payload)
 	if err != nil {
