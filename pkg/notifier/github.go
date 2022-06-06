@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"net/url"
+	"sort"
+	"strings"
+
 	"github.com/google/go-github/v43/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/rs/zerolog/log"
-	"net/url"
-	"sort"
-	"strings"
 )
 
 type GitHubNotifier struct {
@@ -74,6 +75,9 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	if err != nil {
 		return err
 	}
+	// prevent trailing newline characters in the title due to template formatting
+	// newlines in titles prevent Github->Slack webhooks working with issues as of 2022-05-06
+	title = strings.TrimSpace(title)
 
 	req := &github.IssueRequest{
 		Title:  &title,
