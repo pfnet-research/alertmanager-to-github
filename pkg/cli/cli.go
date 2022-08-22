@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -205,7 +204,7 @@ func buildGitHubClient(githubURL string, token string) (*github.Client, error) {
 }
 
 func templateFromReader(r io.Reader) (*template.Template, error) {
-	b, err := ioutil.ReadAll(r)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +212,7 @@ func templateFromReader(r io.Reader) (*template.Template, error) {
 }
 
 func templateFromFile(path string) (*template.Template, error) {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +285,7 @@ func actionTestTemplate(c *cli.Context) error {
 
 	payloadData := defaultPayload
 	if path := c.String(flagPayloadFile); path != "" {
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

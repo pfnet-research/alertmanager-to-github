@@ -153,7 +153,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		if err != nil {
 			return err
 		}
-		log.Info().Msg("created an issue")
+		log.Info().Msgf("created an issue: %s", issue.GetURL())
 	} else {
 		// we have to merge existing labels because Edit api replaces its  labels
 		mergedLabels := []string{}
@@ -177,7 +177,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		if err != nil {
 			return err
 		}
-		log.Info().Msg("edited an issue")
+		log.Info().Msgf("edited an issue: %s", issue.GetURL())
 	}
 
 	var desiredState string
@@ -203,7 +203,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 			return err
 		}
 
-		log.Info().Str("state", desiredState).Msg("updated state of the issue")
+		log.Info().Str("state", desiredState).Msgf("updated state of the issue: %s", issue.GetURL())
 	}
 
 	if err := n.cleanupIssues(ctx, owner, repo, alertID); err != nil {
@@ -247,6 +247,8 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 		if err != nil {
 			return err
 		}
+
+		log.Info().Msgf("closed an issue: %s", issue.GetURL())
 	}
 
 	return nil
