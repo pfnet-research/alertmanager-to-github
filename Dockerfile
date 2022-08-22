@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:1
-FROM --platform=$BUILDPLATFORM golang:1.18 AS base
+FROM --platform=$BUILDPLATFORM golang:1.19 AS base
 WORKDIR /workspace
 ENV CGO_ENABLED=0
 COPY go.* .
