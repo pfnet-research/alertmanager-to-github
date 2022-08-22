@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"net/url"
+	"sort"
+	"strings"
+
 	"github.com/google/go-github/v43/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/rs/zerolog/log"
-	"net/url"
-	"sort"
-	"strings"
 )
 
 type GitHubNotifier struct {
@@ -19,6 +20,7 @@ type GitHubNotifier struct {
 	TitleTemplate   *template.Template
 	AlertIDTemplate *template.Template
 	Labels          []string
+	AutoCloseResolvedIssues bool
 }
 
 func NewGitHub() (*GitHubNotifier, error) {
@@ -122,7 +124,10 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		return fmt.Errorf("invalid alert status %s", payload.Status)
 	}
 
-	if desiredState != issue.GetState() {
+	currentState := issue.GetState()
+	canUpdateState := desiredState != "closed" || n.AutoCloseResolvedIssues
+
+	if desiredState != currentState && canUpdateState {
 		req = &github.IssueRequest{
 			State: github.String(desiredState),
 		}

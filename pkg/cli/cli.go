@@ -28,6 +28,7 @@ const flagGitHubToken = "github-token"
 const flagAlertIDTemplate = "alert-id-template"
 const flagTemplateFile = "template-file"
 const flagPayloadFile = "payload-file"
+const flagAutoCloseResolvedIssues = "auto-close-resolved-issues"
 
 const defaultPayload = `{
   "version": "4",
@@ -147,6 +148,13 @@ func App() *cli.App {
 						Usage:    "GitHub API token (command line argument is not recommended)",
 						EnvVars:  []string{"ATG_GITHUB_TOKEN"},
 					},
+					&cli.BoolFlag{
+						Name:     flagAutoCloseResolvedIssues,
+						Required: false,
+						Value: true,
+						Usage:    "Should issues be automatically closed when resolved",
+						EnvVars:  []string{"ATG_AUTO_CLOSE_RESOLVED_ISSUES"},
+					},
 				},
 			},
 			{
@@ -260,6 +268,7 @@ func actionStart(c *cli.Context) error {
 	nt.BodyTemplate = bodyTemplate
 	nt.TitleTemplate = titleTemplate
 	nt.AlertIDTemplate = alertIDTemplate
+	nt.AutoCloseResolvedIssues = c.Bool(flagAutoCloseResolvedIssues)
 
 	router := server.New(nt).Router()
 	if err := router.Run(c.String(flagListen)); err != nil {
