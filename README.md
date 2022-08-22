@@ -89,9 +89,9 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
   - `json`: Marshal an object to JSON string
   - `timeNow`: Get current time
 
-## Customize organisation and repository
+## Customize organization and repository
 
-The organisation/repository where issues are raised can be customised per-alert by specifying the `owner` and/or `repo` labels on the alert.
+The organization/repository where issues are raised can be customized per-alert by specifying the `atg_owner` label for the organization and/or the `atg_repo` label for the repository on the alert.
 
 e.g.
 
@@ -101,8 +101,8 @@ e.g.
   for: 10m
   labels:
     severity: page
-    org: my-alternative-org
-    repo: specific-service-repository
+    atg_owner: my-alternative-org
+    atg_repo: specific-service-repository
   annotations:
     summary: High request latency
 ```

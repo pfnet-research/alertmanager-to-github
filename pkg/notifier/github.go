@@ -17,6 +17,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	ownerLabelName = "atg_owner"
+	repoLabelName  = "atg_repo"
+)
+
 var (
 	rateLimit = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -70,11 +75,11 @@ func resolveRepository(payload *types.WebhookPayload, queryParams url.Values) (e
 	owner := queryParams.Get("owner")
 	repo := queryParams.Get("repo")
 
-	if payload.CommonLabels["owner"] != "" {
-		owner = payload.CommonLabels["owner"]
+	if payload.CommonLabels[ownerLabelName] != "" {
+		owner = payload.CommonLabels[ownerLabelName]
 	}
-	if payload.CommonLabels["repo"] != "" {
-		repo = payload.CommonLabels["repo"]
+	if payload.CommonLabels[repoLabelName] != "" {
+		repo = payload.CommonLabels[repoLabelName]
 	}
 	if owner == "" {
 		return fmt.Errorf("owner was not specified in either the webhook URL, or the alert labels"), "", ""
