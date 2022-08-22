@@ -20,6 +20,7 @@ type GitHubNotifier struct {
 	TitleTemplate   *template.Template
 	AlertIDTemplate *template.Template
 	Labels          []string
+	AutoCloseResolvedIssues bool
 }
 
 func NewGitHub() (*GitHubNotifier, error) {
@@ -144,7 +145,10 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		return fmt.Errorf("invalid alert status %s", payload.Status)
 	}
 
-	if desiredState != issue.GetState() {
+	currentState := issue.GetState()
+	canUpdateState := desiredState != "closed" || n.AutoCloseResolvedIssues
+
+	if desiredState != currentState && canUpdateState {
 		req = &github.IssueRequest{
 			State: github.String(desiredState),
 		}
