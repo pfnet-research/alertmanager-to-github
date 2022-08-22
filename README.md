@@ -47,6 +47,7 @@ receivers:
   - name: "togithub"
     webhook_configs:
       # Create issues in "bar" repo in "foo" organization.
+      # these are the default values and can be overriden by labels on the alert
       # repo and owner parameters must be URL-encoded.
       - url: "http://localhost:8080/v1/webhook?owner=foo&repo=bar"
 ```
@@ -87,6 +88,26 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
   - `urlQueryEscape`: Escape a string as a URL query
   - `json`: Marshal an object to JSON string
   - `timeNow`: Get current time
+
+## Customize organisation and repository
+
+The organisation/repository where issues are raised can be customised per-alert by specifying the `owner` and/or `repo` labels on the alert.
+
+e.g.
+
+```yaml
+- alert: HighRequestLatency
+  expr: job:request_latency_seconds:mean5m{job="myjob"} > 0.5
+  for: 10m
+  labels:
+    severity: page
+    org: my-alternative-org
+    repo: specific-service-repository
+  annotations:
+    summary: High request latency
+```
+
+This mechanism has precedence over the receiver URL query parameters.
 
 ## Deployment
 
