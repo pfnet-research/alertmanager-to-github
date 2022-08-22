@@ -97,6 +97,9 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	if err != nil {
 		return err
 	}
+	// prevent trailing newline characters in the title due to template formatting
+	// newlines in titles prevent Github->Slack webhooks working with issues as of 2022-05-06
+	title = strings.TrimSpace(title)
 
 	req := &github.IssueRequest{
 		Title:  &title,
