@@ -6,7 +6,7 @@ COPY go.* .
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-FROM golangci/golangci-lint:v1.45 AS lint-base
+FROM golangci/golangci-lint:v1.48 AS lint-base
 FROM base AS lint
 RUN --mount=target=. \
     --mount=from=lint-base,src=/usr/bin/golangci-lint,target=/usr/bin/golangci-lint \
