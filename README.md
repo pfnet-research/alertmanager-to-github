@@ -16,7 +16,7 @@ It does:
 ### Docker image
 
 ```shell
-docker pull ghcr.io/pfnet-research/alertmanager-to-github:v0.0.2
+docker pull ghcr.io/pfnet-research/alertmanager-to-github:v0.1.0
 ```
 
 ### go get
