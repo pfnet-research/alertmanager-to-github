@@ -1,8 +1,11 @@
 name: Release
 
 on:
+  # tagged manually
   push:
     tags: ["v*"]
+  # dispatch from tagpr.yaml workflow
+  workflow_dispatch:
 
 jobs:
   run:
