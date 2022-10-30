@@ -1,0 +1,29 @@
+#
+# This is a configuration for automatic changelog generation
+# tagpr respects this.
+# ref: https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+#
+changelog:
+  exclude:
+    labels:
+    - release-note/skip
+    - tagpr
+  categories:
+  - title: '💣 Breaking Changes'
+    labels: 
+    - 'release-note/breaking-change'
+  - title: '🚀 Features'
+    labels: 
+    - 'release-note/feature'
+  - title: '🐛 Bug Fixes'
+    labels: 
+    - 'release-note/bugfix'
+  - title: '📜 Documentation'
+    labels: 
+    - 'release-note/document'
+  - title: '🧰 Maintenance'
+    labels: 
+    - 'release-note/chore'
+  - title: '🔬 Other Changes'
+    labels:
+    - "*"

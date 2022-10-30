@@ -1,0 +1,28 @@
+name: tagpr
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  tagpr:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - id: tagpr
+      name: Tagpr
+      uses: Songmu/tagpr@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Trigger Release Workflow(only when tagged)
+      uses: actions/github-script@v6
+      if: "steps.tagpr.outputs.tag != ''"
+      with:
+        script: |
+          github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'release.yaml',
+            ref: "refs/tags/${{ steps.tagpr.outputs.tag }}",
+          })

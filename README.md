@@ -114,3 +114,7 @@ This mechanism has precedence over the receiver URL query parameters.
 ### Kubernetes
 
 https://github.com/pfnet-research/alertmanager-to-github/tree/master/example/kubernetes
+
+## Releaese
+
+The release process is fully automated by [tagpr](https://github.com/Songmu/tagpr). To release, just merge [the latest release PR](https://github.com/pfnet-research/alertmanager-to-github/pulls?q=is:pr+is:open+label:tagpr).
