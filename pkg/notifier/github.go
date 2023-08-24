@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v43/github"
+	"github.com/google/go-github/v54/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
@@ -127,7 +127,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 			Str("groupKey", payload.GroupKey).Msg("too many search result")
 
 		for _, i := range searchResult.Issues {
-			if issue == nil || issue.GetCreatedAt().Before(i.GetCreatedAt()) {
+			if issue == nil || issue.GetCreatedAt().Before(i.GetCreatedAt().Time) {
 				issue = i
 			}
 		}
@@ -241,7 +241,7 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 	}
 
 	sort.Slice(issues, func(i, j int) bool {
-		return issues[i].GetCreatedAt().Before(issues[j].GetCreatedAt())
+		return issues[i].GetCreatedAt().Before(issues[j].GetCreatedAt().Time)
 	})
 
 	latestIssue := issues[len(issues)-1]

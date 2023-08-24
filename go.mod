@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.6.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/google/go-github/v43 v43.0.0
+	github.com/google/go-github/v54 v54.0.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rs/zerolog v1.30.0
 	github.com/stretchr/testify v1.8.4
