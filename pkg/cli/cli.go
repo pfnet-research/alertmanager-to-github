@@ -321,6 +321,9 @@ func actionStart(c *cli.Context) error {
 	}
 	nt.GitHubClient = githubClient
 	nt.Labels = c.StringSlice(flagLabels)
+	if nt.Labels == nil {
+		nt.Labels = []string{}
+	}
 	nt.BodyTemplate = bodyTemplate
 	nt.TitleTemplate = titleTemplate
 	nt.AlertIDTemplate = alertIDTemplate
