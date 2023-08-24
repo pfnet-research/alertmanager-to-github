@@ -110,10 +110,11 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 	})
-	updateGithubApiMetrics("search", response, err)
 	if err != nil {
 		return err
 	}
+
+	updateGithubApiMetrics("search", response)
 	if err = checkSearchResponse(response); err != nil {
 		return err
 	}
@@ -154,10 +155,11 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 
 	if issue == nil {
 		issue, response, err = n.GitHubClient.Issues.Create(ctx, owner, repo, req)
-		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
+
+		updateGithubApiMetrics("issues", response)
 		log.Info().Msgf("created an issue: %s", issue.GetURL())
 	} else {
 		// we have to merge existing labels because Edit api replaces its  labels
@@ -178,10 +180,11 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		}
 		req.Labels = &mergedLabels
 		issue, _, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
-		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
+
+		updateGithubApiMetrics("issues", response)
 		log.Info().Msgf("edited an issue: %s", issue.GetURL())
 	}
 
@@ -203,11 +206,11 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 			State: github.String(desiredState),
 		}
 		issue, response, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
-		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
 
+		updateGithubApiMetrics("issues", response)
 		log.Info().Str("state", desiredState).Msgf("updated state of the issue: %s", issue.GetURL())
 	}
 
@@ -223,10 +226,11 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 	})
-	updateGithubApiMetrics("search", response, err)
 	if err != nil {
 		return err
 	}
+
+	updateGithubApiMetrics("search", response)
 	if err = checkSearchResponse(response); err != nil {
 		return err
 	}
@@ -248,11 +252,11 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 			State: github.String("closed"),
 		}
 		issue, response, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
-		updateGithubApiMetrics("issues", response, err)
 		if err != nil {
 			return err
 		}
 
+		updateGithubApiMetrics("issues", response)
 		log.Info().Msgf("closed an issue: %s", issue.GetURL())
 	}
 
@@ -275,7 +279,7 @@ func checkSearchResponse(response *github.Response) error {
 	return nil
 }
 
-func updateGithubApiMetrics(apiName string, resp *github.Response, err error) {
+func updateGithubApiMetrics(apiName string, resp *github.Response) {
 	rateLimit.WithLabelValues(apiName).Set(float64(resp.Rate.Limit))
 	rateRemaining.WithLabelValues(apiName).Set(float64(resp.Rate.Remaining))
 	rateResetTime.WithLabelValues(apiName).Set(float64(resp.Rate.Reset.UTC().Unix()))
