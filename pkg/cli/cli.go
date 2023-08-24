@@ -236,15 +236,10 @@ func buildGitHubClientWithToken(githubURL string, token string) (*github.Client,
 	tc := oauth2.NewClient(ctx, ts)
 
 	if githubURL == "" {
-		client = github.NewClient(tc)
-	} else {
-		client, err = github.NewEnterpriseClient(githubURL, githubURL, tc)
-		if err != nil {
-			return nil, err
-		}
+		return github.NewClient(tc), nil
 	}
 
-	return client, nil
+	return github.NewEnterpriseClient(githubURL, githubURL, tc)
 }
 
 func templateFromReader(r io.Reader) (*template.Template, error) {
