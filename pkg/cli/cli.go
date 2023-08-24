@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v43/github"
+	"github.com/google/go-github/v54/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
