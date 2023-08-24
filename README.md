@@ -27,13 +27,25 @@ go get github.com/pfnet-research/alertmanager-to-github
 
 ## Usage
 
-Start webhook server:
+Set GitHub API credentials to environment variables:
+
+```shell
+$ read ATG_GITHUB_APP_PRIVATE_KEY
+(GitHub App's private key)
+$ export ATG_GITHUB_APP_PRIVATE_KEY
+```
+
+or,
 
 ```shell
 $ read ATG_GITHUB_TOKEN
 (Personal Access Token)
 $ export ATG_GITHUB_TOKEN
+```
 
+Start webhook server:
+
+```
 $ alertmanager-to-github start
 ```
 
@@ -63,15 +75,18 @@ USAGE:
    alertmanager-to-github start [command options] [arguments...]
 
 OPTIONS:
-   --listen value               HTTP listen on (default: ":8080") [$ATG_LISTEN]
-   --github-url value           GitHub Enterprise URL (e.g. https://github.example.com) [$ATG_GITHUB_URL]
-   --labels value               Issue labels [$ATG_LABELS]
-   --body-template-file value   Body template file [$ATG_BODY_TEMPLATE_FILE]
-   --title-template-file value  Title template file [$ATG_TITLE_TEMPLATE_FILE]
-   --alert-id-template value    Alert ID template (default: "{{.Payload.GroupKey}}") [$ATG_ALERT_ID_TEMPLATE]
-   --github-token value         GitHub API token (command line argument is not recommended) [$ATG_GITHUB_TOKEN]
-   --auto-close-resolved-issues Close resolved issues automatically (default: true) [$ATG_AUTO_CLOSE_RESOLVED_ISSUES]
-   --help, -h                   show help (default: false)
+   --listen value                      HTTP listen on (default: ":8080") [$ATG_LISTEN]
+   --github-url value                  GitHub Enterprise URL (e.g. https://github.example.com) [$ATG_GITHUB_URL]
+   --labels value [ --labels value ]   Issue labels [$ATG_LABELS]
+   --body-template-file value          Body template file [$ATG_BODY_TEMPLATE_FILE]
+   --title-template-file value         Title template file [$ATG_TITLE_TEMPLATE_FILE]
+   --alert-id-template value           Alert ID template (default: "{{.Payload.GroupKey}}") [$ATG_ALERT_ID_TEMPLATE]
+   --github-app-id value               GitHub App ID (default: 0) [$ATG_GITHUB_APP_ID]
+   --github-app-installation-id value  GitHub App installation ID (default: 0) [$ATG_GITHUB_APP_INSTALLATION_ID]
+   --github-app-private-key value      GitHub App private key (command line argument is not recommended) [$ATG_GITHUB_APP_PRIVATE_KEY]
+   --github-token value                GitHub API token (command line argument is not recommended) [$ATG_GITHUB_TOKEN]
+   --auto-close-resolved-issues        Should issues be automatically closed when resolved (default: true) [$ATG_AUTO_CLOSE_RESOLVED_ISSUES]
+   --help, -h                          show help
 ```
 
 ### GitHub Enterprise
