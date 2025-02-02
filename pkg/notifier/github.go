@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v54/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
@@ -65,6 +66,7 @@ type GitHubNotifier struct {
 	AlertIDTemplate         *template.Template
 	Labels                  []string
 	AutoCloseResolvedIssues bool
+	ReopenWindow            *time.Duration
 }
 
 func NewGitHub() (*GitHubNotifier, error) {
@@ -88,6 +90,10 @@ func resolveRepository(payload *types.WebhookPayload, queryParams url.Values) (e
 		return fmt.Errorf("repo was not specified in either the webhook URL, or the alert labels"), "", ""
 	}
 	return nil, owner, repo
+}
+
+func isClosed(issue *github.Issue) bool {
+	return issue != nil && issue.GetState() == "closed"
 }
 
 func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
@@ -119,17 +125,28 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		return err
 	}
 
-	var issue *github.Issue
-	if searchResult.GetTotal() == 1 {
-		issue = searchResult.Issues[0]
-	} else if searchResult.GetTotal() > 1 {
-		log.Warn().Interface("searchResultTotal", searchResult.GetTotal()).
-			Str("groupKey", payload.GroupKey).Msg("too many search result")
+	issues := searchResult.Issues
+	sort.Slice(issues, func(i, j int) bool {
+		return issues[i].GetCreatedAt().After(issues[j].GetCreatedAt().Time)
+	})
 
-		for _, i := range searchResult.Issues {
-			if issue == nil || issue.GetCreatedAt().Before(i.GetCreatedAt().Time) {
-				issue = i
-			}
+	var issue *github.Issue
+	if len(issues) == 1 {
+		issue = issues[0]
+	} else if len(issues) > 1 {
+		issue = issues[0]
+		if n.ReopenWindow == nil {
+			// If issues are always reopened, the search result is expected to be unique.
+			log.Warn().Interface("searchResultTotal", searchResult.GetTotal()).
+				Str("groupKey", payload.GroupKey).Msg("too many search result")
+		}
+	}
+
+	if n.ReopenWindow != nil && issue != nil && isClosed(issue) && payload.Status == types.AlertStatusFiring {
+		deadline := issue.GetClosedAt().Add(*n.ReopenWindow)
+		if time.Now().After(deadline) {
+			// A new issue will be created instead of reopening the existing issue.
+			issue = nil
 		}
 	}
 
@@ -225,6 +242,8 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 	query := fmt.Sprintf(`repo:%s/%s "%s"`, owner, repo, alertID)
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
+		Sort:      "created",
+		Order:     "desc",
 	})
 	if err != nil {
 		return err
@@ -247,6 +266,11 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 	latestIssue := issues[len(issues)-1]
 	oldIssues := issues[:len(issues)-1]
 	for _, issue := range oldIssues {
+		if n.ReopenWindow != nil && isClosed(issue) {
+			// If the reopen window is set, multiple closed issues are expected.
+			// Keep them untouched.
+			continue
+		}
 		req := &github.IssueRequest{
 			Body:  github.String(fmt.Sprintf("duplicated %s", latestIssue.GetHTMLURL())),
 			State: github.String("closed"),

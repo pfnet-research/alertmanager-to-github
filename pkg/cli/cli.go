@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/go-github/v54/github"
@@ -34,6 +35,7 @@ const flagAlertIDTemplate = "alert-id-template"
 const flagTemplateFile = "template-file"
 const flagPayloadFile = "payload-file"
 const flagAutoCloseResolvedIssues = "auto-close-resolved-issues"
+const flagReopenWindow = "reopen-window"
 
 const defaultPayload = `{
   "version": "4",
@@ -178,6 +180,12 @@ func App() *cli.App {
 						Usage:    "Should issues be automatically closed when resolved",
 						EnvVars:  []string{"ATG_AUTO_CLOSE_RESOLVED_ISSUES"},
 					},
+					&cli.DurationFlag{
+						Name:     flagReopenWindow,
+						Required: false,
+						Usage:    "Alerts will create a new issue instead of reopening closed issues if the specified duration has passed",
+						EnvVars:  []string{"ATG_REOPEN_WINDOW"},
+					},
 				},
 			},
 			{
@@ -310,6 +318,12 @@ func actionStart(c *cli.Context) error {
 		return err
 	}
 
+	var reopenWindow *time.Duration
+	if c.IsSet(flagReopenWindow) {
+		d := c.Duration(flagReopenWindow)
+		reopenWindow = &d
+	}
+
 	nt, err := notifier.NewGitHub()
 	if err != nil {
 		return err
@@ -323,6 +337,7 @@ func actionStart(c *cli.Context) error {
 	nt.TitleTemplate = titleTemplate
 	nt.AlertIDTemplate = alertIDTemplate
 	nt.AutoCloseResolvedIssues = c.Bool(flagAutoCloseResolvedIssues)
+	nt.ReopenWindow = reopenWindow
 
 	router := server.New(nt).Router()
 	if err := router.Run(c.String(flagListen)); err != nil {
