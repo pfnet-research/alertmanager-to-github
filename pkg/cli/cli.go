@@ -184,11 +184,13 @@ func App() *cli.App {
 						Usage:    "Should issues be automatically closed when resolved",
 						EnvVars:  []string{"ATG_AUTO_CLOSE_RESOLVED_ISSUES"},
 					},
-					&cli.DurationFlag{
-						Name:     flagReopenWindow,
-						Required: false,
-						Usage:    "Alerts will create a new issue instead of reopening closed issues if the specified duration has passed",
-						EnvVars:  []string{"ATG_REOPEN_WINDOW"},
+					&noDefaultDurationFlag{
+						cli.DurationFlag{
+							Name:     flagReopenWindow,
+							Required: false,
+							Usage:    "Alerts will create a new issue instead of reopening closed issues if the specified duration has passed",
+							EnvVars:  []string{"ATG_REOPEN_WINDOW"},
+						},
 					},
 				},
 			},
