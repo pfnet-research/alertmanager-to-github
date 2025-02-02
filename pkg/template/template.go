@@ -3,14 +3,17 @@ package template
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"net/url"
 	"text/template"
 	"time"
+
+	"github.com/google/go-github/v54/github"
+	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 )
 
 type Vars struct {
-	Payload *types.WebhookPayload
+	Payload       *types.WebhookPayload
+	PreviousIssue *github.Issue
 }
 
 type Template struct {
@@ -30,9 +33,10 @@ func Parse(s string) (*Template, error) {
 	return &Template{inner: t}, nil
 }
 
-func (t *Template) Execute(payload *types.WebhookPayload) (string, error) {
+func (t *Template) Execute(payload *types.WebhookPayload, previousIssue *github.Issue) (string, error) {
 	vars := &Vars{
-		Payload: payload,
+		Payload:       payload,
+		PreviousIssue: previousIssue,
 	}
 
 	var buf bytes.Buffer

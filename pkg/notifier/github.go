@@ -115,6 +115,8 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	query := fmt.Sprintf(`repo:%s/%s "%s"`, owner, repo, alertID)
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
+		Sort:      "created",
+		Order:     "desc",
 	})
 	if err != nil {
 		return err
@@ -130,11 +132,12 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		return issues[i].GetCreatedAt().After(issues[j].GetCreatedAt().Time)
 	})
 
-	var issue *github.Issue
+	var issue, previousIssue *github.Issue
 	if len(issues) == 1 {
 		issue = issues[0]
 	} else if len(issues) > 1 {
 		issue = issues[0]
+		previousIssue = issues[1]
 		if n.ReopenWindow == nil {
 			// If issues are always reopened, the search result is expected to be unique.
 			log.Warn().Interface("searchResultTotal", searchResult.GetTotal()).
@@ -146,17 +149,18 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		deadline := issue.GetClosedAt().Add(*n.ReopenWindow)
 		if time.Now().After(deadline) {
 			// A new issue will be created instead of reopening the existing issue.
+			previousIssue = issue
 			issue = nil
 		}
 	}
 
-	body, err := n.BodyTemplate.Execute(payload)
+	body, err := n.BodyTemplate.Execute(payload, previousIssue)
 	if err != nil {
 		return err
 	}
 	body += fmt.Sprintf("\n<!-- (UNIQUE ALERT ID, DO NOT MODIFY: %s ) -->\n", alertID)
 
-	title, err := n.TitleTemplate.Execute(payload)
+	title, err := n.TitleTemplate.Execute(payload, previousIssue)
 	if err != nil {
 		return err
 	}
@@ -288,7 +292,7 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 }
 
 func (n *GitHubNotifier) getAlertID(payload *types.WebhookPayload) (string, error) {
-	id, err := n.AlertIDTemplate.Execute(payload)
+	id, err := n.AlertIDTemplate.Execute(payload, nil)
 	if err != nil {
 		return "", err
 	}

@@ -36,6 +36,7 @@ const flagTemplateFile = "template-file"
 const flagPayloadFile = "payload-file"
 const flagAutoCloseResolvedIssues = "auto-close-resolved-issues"
 const flagReopenWindow = "reopen-window"
+const flagNoPreviousIssue = "no-previous-issue"
 
 const defaultPayload = `{
   "version": "4",
@@ -98,6 +99,9 @@ const defaultPayload = `{
     }
   ]
 }`
+
+//go:embed samples/issue.json
+var sampleIssue string
 
 //go:embed templates/*.tmpl
 var templates embed.FS
@@ -200,6 +204,10 @@ func App() *cli.App {
 					&cli.StringFlag{
 						Name:  flagPayloadFile,
 						Usage: "Payload data file",
+					},
+					&cli.BoolFlag{
+						Name:  flagNoPreviousIssue,
+						Usage: "Set `.PreviousIssue` to nil",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -370,7 +378,16 @@ func actionTestTemplate(c *cli.Context) error {
 		return err
 	}
 
-	s, err := t.Execute(payload)
+	var previousIssue *github.Issue
+	if !c.Bool(flagNoPreviousIssue) {
+		previousIssue = &github.Issue{}
+		err = json.NewDecoder(strings.NewReader(sampleIssue)).Decode(previousIssue)
+		if err != nil {
+			return err
+		}
+	}
+
+	s, err := t.Execute(payload, previousIssue)
 	if err != nil {
 		return err
 	}
