@@ -86,6 +86,7 @@ OPTIONS:
    --github-app-private-key value      GitHub App private key (command line argument is not recommended) [$ATG_GITHUB_APP_PRIVATE_KEY]
    --github-token value                GitHub API token (command line argument is not recommended) [$ATG_GITHUB_TOKEN]
    --auto-close-resolved-issues        Should issues be automatically closed when resolved (default: true) [$ATG_AUTO_CLOSE_RESOLVED_ISSUES]
+   --reopen-window value               Alerts will create a new issue instead of reopening closed issues if the specified duration has passed [$ATG_REOPEN_WINDOW]
    --help, -h                          show help
 ```
 
@@ -99,6 +100,7 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
 
 - Variables
   - `.Payload`: Webhook payload incoming to this receiver. For more information, see `WebhookPayload` in [pkg/types/payload.go](https://github.com/pfnet-research/alertmanager-to-github/blob/master/pkg/types/payload.go)
+  - `.PreviousIssue`: The previous issue with the same alert ID, or `nil` if there is no such issue. For more information, see `Issue` in [github.com/google/go-github/v54/github](https://pkg.go.dev/github.com/google/go-github/v54@v54.0.0/github#Issue). Useful when `--reopen-window` is specified.
 - Functions
   - `urlQueryEscape`: Escape a string as a URL query
   - `json`: Marshal an object to JSON string

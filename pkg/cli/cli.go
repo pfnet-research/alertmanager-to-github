@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/go-github/v54/github"
@@ -34,6 +35,8 @@ const flagAlertIDTemplate = "alert-id-template"
 const flagTemplateFile = "template-file"
 const flagPayloadFile = "payload-file"
 const flagAutoCloseResolvedIssues = "auto-close-resolved-issues"
+const flagReopenWindow = "reopen-window"
+const flagNoPreviousIssue = "no-previous-issue"
 
 const defaultPayload = `{
   "version": "4",
@@ -96,6 +99,9 @@ const defaultPayload = `{
     }
   ]
 }`
+
+//go:embed samples/issue.json
+var sampleIssue string
 
 //go:embed templates/*.tmpl
 var templates embed.FS
@@ -178,6 +184,14 @@ func App() *cli.App {
 						Usage:    "Should issues be automatically closed when resolved",
 						EnvVars:  []string{"ATG_AUTO_CLOSE_RESOLVED_ISSUES"},
 					},
+					&noDefaultDurationFlag{
+						cli.DurationFlag{
+							Name:     flagReopenWindow,
+							Required: false,
+							Usage:    "Alerts will create a new issue instead of reopening closed issues if the specified duration has passed",
+							EnvVars:  []string{"ATG_REOPEN_WINDOW"},
+						},
+					},
 				},
 			},
 			{
@@ -192,6 +206,10 @@ func App() *cli.App {
 					&cli.StringFlag{
 						Name:  flagPayloadFile,
 						Usage: "Payload data file",
+					},
+					&cli.BoolFlag{
+						Name:  flagNoPreviousIssue,
+						Usage: "Set `.PreviousIssue` to nil",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -310,6 +328,12 @@ func actionStart(c *cli.Context) error {
 		return err
 	}
 
+	var reopenWindow *time.Duration
+	if c.IsSet(flagReopenWindow) {
+		d := c.Duration(flagReopenWindow)
+		reopenWindow = &d
+	}
+
 	nt, err := notifier.NewGitHub()
 	if err != nil {
 		return err
@@ -323,6 +347,7 @@ func actionStart(c *cli.Context) error {
 	nt.TitleTemplate = titleTemplate
 	nt.AlertIDTemplate = alertIDTemplate
 	nt.AutoCloseResolvedIssues = c.Bool(flagAutoCloseResolvedIssues)
+	nt.ReopenWindow = reopenWindow
 
 	router := server.New(nt).Router()
 	if err := router.Run(c.String(flagListen)); err != nil {
@@ -355,7 +380,16 @@ func actionTestTemplate(c *cli.Context) error {
 		return err
 	}
 
-	s, err := t.Execute(payload)
+	var previousIssue *github.Issue
+	if !c.Bool(flagNoPreviousIssue) {
+		previousIssue = &github.Issue{}
+		err = json.NewDecoder(strings.NewReader(sampleIssue)).Decode(previousIssue)
+		if err != nil {
+			return err
+		}
+	}
+
+	s, err := t.Execute(payload, previousIssue)
 	if err != nil {
 		return err
 	}

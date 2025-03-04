@@ -1,5 +1,10 @@
 {{- $payload := .Payload -}}
+{{- $previousIssue := .PreviousIssue -}}
 (Updated at {{timeNow}})
+{{- if $previousIssue }}
+
+Previous Issue: {{ $previousIssue.HTMLURL }}
+{{- end }}
 
 ## Common Labels
 
