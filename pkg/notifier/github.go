@@ -73,7 +73,7 @@ func NewGitHub() (*GitHubNotifier, error) {
 	return &GitHubNotifier{}, nil
 }
 
-func resolveRepository(payload *types.WebhookPayload, queryParams url.Values) (error, string, string) {
+func resolveRepository(payload *types.WebhookPayload, queryParams url.Values) (string, string, error) {
 	owner := queryParams.Get("owner")
 	repo := queryParams.Get("repo")
 
@@ -84,12 +84,12 @@ func resolveRepository(payload *types.WebhookPayload, queryParams url.Values) (e
 		repo = payload.CommonLabels[repoLabelName]
 	}
 	if owner == "" {
-		return fmt.Errorf("owner was not specified in either the webhook URL, or the alert labels"), "", ""
+		return "", "", fmt.Errorf("owner was not specified in either the webhook URL, or the alert labels")
 	}
 	if repo == "" {
-		return fmt.Errorf("repo was not specified in either the webhook URL, or the alert labels"), "", ""
+		return "", "", fmt.Errorf("repo was not specified in either the webhook URL, or the alert labels")
 	}
-	return nil, owner, repo
+	return owner, repo, nil
 }
 
 func isClosed(issue *github.Issue) bool {
@@ -97,7 +97,7 @@ func isClosed(issue *github.Issue) bool {
 }
 
 func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPayload, queryParams url.Values) error {
-	err, owner, repo := resolveRepository(payload, queryParams)
+	owner, repo, err := resolveRepository(payload, queryParams)
 	if err != nil {
 		return err
 	}

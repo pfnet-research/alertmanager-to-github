@@ -18,6 +18,7 @@ import (
 	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
@@ -307,7 +308,11 @@ func actionStart(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer bodyReader.Close()
+	defer func() {
+		if err := bodyReader.Close(); err != nil {
+			log.Err(err).Msg("failed to close bodyReader")
+		}
+	}()
 	bodyTemplate, err := templateFromReader(bodyReader)
 	if err != nil {
 		return err
@@ -317,7 +322,11 @@ func actionStart(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer titleReader.Close()
+	defer func() {
+		if err := titleReader.Close(); err != nil {
+			log.Err(err).Msg("failed to close titleReader")
+		}
+	}()
 	titleTemplate, err := templateFromReader(titleReader)
 	if err != nil {
 		return err
