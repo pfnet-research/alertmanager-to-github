@@ -182,7 +182,7 @@ func App() *cli.App {
 						Name:     flagAutoCloseResolvedIssues,
 						Required: false,
 						Value:    true,
-						Usage:    "Should issues be automatically closed when resolved",
+						Usage:    "Should issues be automatically closed when resolved. If alerts have 'atg-skip-auto-close=true' annotation, issues will not be auto-closed.",
 						EnvVars:  []string{"ATG_AUTO_CLOSE_RESOLVED_ISSUES"},
 					},
 					&noDefaultDurationFlag{

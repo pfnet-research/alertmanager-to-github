@@ -10,6 +10,9 @@ type AlertStatus string
 const (
 	AlertStatusResolved AlertStatus = "resolved"
 	AlertStatusFiring   AlertStatus = "firing"
+
+	skipAutoCloseAnnotationKey   = "atg-skip-auto-close"
+	skipAutoCloseAnnotationValue = "true"
 )
 
 type WebhookPayload struct {
@@ -76,4 +79,19 @@ func (p *WebhookPayload) AnnotationKeysExceptCommon() []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+func (p *WebhookPayload) HasSkipAutoCloseAnnotation() bool {
+	for _, alert := range p.Alerts {
+		if alert.Annotations == nil {
+			continue
+		}
+
+		val, ok := alert.Annotations[skipAutoCloseAnnotationKey]
+		if ok && val == skipAutoCloseAnnotationValue {
+			return true
+		}
+	}
+
+	return false
 }
