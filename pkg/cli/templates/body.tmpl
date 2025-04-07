@@ -55,4 +55,9 @@ Previous Issue: {{ $previousIssue.HTMLURL }}
 {{end -}}
 </table>
 
+{{- if $payload.HasSkipAutoCloseAnnotation }}
+
+*This issue will not be auto-closed because the alerts have `atg-skip-auto-close=true` annotation.*
+{{- end }}
+
 <!-- alert data: {{json $payload}} -->

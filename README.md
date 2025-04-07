@@ -85,7 +85,7 @@ OPTIONS:
    --github-app-installation-id value  GitHub App installation ID (default: 0) [$ATG_GITHUB_APP_INSTALLATION_ID]
    --github-app-private-key value      GitHub App private key (command line argument is not recommended) [$ATG_GITHUB_APP_PRIVATE_KEY]
    --github-token value                GitHub API token (command line argument is not recommended) [$ATG_GITHUB_TOKEN]
-   --auto-close-resolved-issues        Should issues be automatically closed when resolved (default: true) [$ATG_AUTO_CLOSE_RESOLVED_ISSUES]
+   --auto-close-resolved-issues        Should issues be automatically closed when resolved. If alerts have 'atg-skip-auto-close=true' annotation, issues will not be auto-closed. (default: true) [$ATG_AUTO_CLOSE_RESOLVED_ISSUES]
    --reopen-window value               Alerts will create a new issue instead of reopening closed issues if the specified duration has passed [$ATG_REOPEN_WINDOW]
    --help, -h                          show help
 ```
@@ -105,6 +105,21 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
   - `urlQueryEscape`: Escape a string as a URL query
   - `json`: Marshal an object to JSON string
   - `timeNow`: Get current time
+
+### Automatically close issues when alerts are resolved
+
+You can use the `--auto-close-resolved-issues` flag to automatically close issues when alerts are resolved.
+
+If you want to skip auto-close for some alerts, add the `atg-skip-auto-close=true` annotation to them.
+
+```yaml
+- alert: HighRequestLatency
+  expr: job:request_latency_seconds:mean5m{job="myjob"} > 0.5
+  labels:
+    severity: critical
+  annotations:
+    atg-skip-auto-close: "true"
+```
 
 ## Customize organization and repository
 

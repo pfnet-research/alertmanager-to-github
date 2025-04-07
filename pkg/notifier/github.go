@@ -220,7 +220,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	}
 
 	currentState := issue.GetState()
-	canUpdateState := desiredState != "closed" || n.AutoCloseResolvedIssues
+	canUpdateState := desiredState == "open" || n.shouldAutoCloseIssue(payload)
 
 	if desiredState != currentState && canUpdateState {
 		req = &github.IssueRequest{
@@ -298,6 +298,14 @@ func (n *GitHubNotifier) getAlertID(payload *types.WebhookPayload) (string, erro
 	}
 
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(id))), nil
+}
+
+func (n *GitHubNotifier) shouldAutoCloseIssue(payload *types.WebhookPayload) bool {
+	if !n.AutoCloseResolvedIssues {
+		return false
+	}
+
+	return !payload.HasSkipAutoCloseAnnotation()
 }
 
 func checkSearchResponse(response *github.Response) error {
