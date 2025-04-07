@@ -3,6 +3,9 @@ name: tagpr
 on:
   push:
     branches: ["master"]
+  pull_request:
+    types: ["labeled", "unlabeled"]
+    branches: ["tagpr-from-v*"]
 
 jobs:
   tagpr:
