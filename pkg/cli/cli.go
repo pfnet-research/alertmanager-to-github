@@ -310,7 +310,7 @@ func actionStart(c *cli.Context) error {
 	}
 	defer func() {
 		if err := bodyReader.Close(); err != nil {
-			log.Err(err).Msg("failed to close bodyReader")
+			log.Error().Err(err).Msg("failed to close bodyReader")
 		}
 	}()
 	bodyTemplate, err := templateFromReader(bodyReader)
@@ -324,7 +324,7 @@ func actionStart(c *cli.Context) error {
 	}
 	defer func() {
 		if err := titleReader.Close(); err != nil {
-			log.Err(err).Msg("failed to close titleReader")
+			log.Error().Err(err).Msg("failed to close titleReader")
 		}
 	}()
 	titleTemplate, err := templateFromReader(titleReader)
