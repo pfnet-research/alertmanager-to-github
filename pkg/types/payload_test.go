@@ -28,7 +28,7 @@ func TestWebhookPayloadHasSkipAutoCloseAnnotation(t *testing.T) {
 			payload: &WebhookPayload{
 				Alerts: []WebhookAlert{{
 					Annotations: map[string]string{
-						"atg-skip-auto-close": "true",
+						"atg_skip_auto_close": "true",
 					},
 				}},
 			},
@@ -69,7 +69,7 @@ func TestWebhookPayloadHasSkipAutoCloseAnnotation(t *testing.T) {
 				Alerts: []WebhookAlert{
 					{
 						Annotations: map[string]string{
-							"atg-skip-auto-close": "true",
+							"atg_skip_auto_close": "true",
 						},
 					},
 					{
