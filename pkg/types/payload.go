@@ -11,7 +11,7 @@ const (
 	AlertStatusResolved AlertStatus = "resolved"
 	AlertStatusFiring   AlertStatus = "firing"
 
-	skipAutoCloseAnnotationKey   = "atg-skip-auto-close"
+	skipAutoCloseAnnotationKey   = "atg_skip_auto_close"
 	skipAutoCloseAnnotationValue = "true"
 )
 
