@@ -1,11 +1,11 @@
-FROM --platform=$BUILDPLATFORM golang:1.24 AS base
+FROM --platform=$BUILDPLATFORM golang:1.25 AS base
 WORKDIR /workspace
 ENV CGO_ENABLED=0
 COPY go.* .
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-FROM golangci/golangci-lint:v2.1.6 AS lint-base
+FROM golangci/golangci-lint:v2.4.0 AS lint-base
 FROM base AS lint
 RUN --mount=target=. \
     --mount=from=lint-base,src=/usr/bin/golangci-lint,target=/usr/bin/golangci-lint \
