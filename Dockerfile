@@ -32,5 +32,6 @@ COPY --from=build /out/alertmanager-to-github /
 
 FROM --platform=$BUILDPLATFORM gcr.io/distroless/static:nonroot
 COPY --from=build /out/alertmanager-to-github /
+ENV GIN_MODE=release
 ENTRYPOINT ["/alertmanager-to-github"]
 CMD ["start"]
