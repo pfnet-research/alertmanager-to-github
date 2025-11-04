@@ -147,6 +147,19 @@ This mechanism has precedence over the receiver URL query parameters.
 
 https://github.com/pfnet-research/alertmanager-to-github/tree/master/example/kubernetes
 
+## Metrics
+
+alertmanager-to-github exposes Prometheus metrics on `/metrics`.
+
+In addition to standard Go runtime and process metrics, the following application-specific metrics are exposed:
+
+| Metric name                 | Metric type | Description                                                      | Labels                                                                            |
+|-----------------------------|-------------|------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| `github_api_rate_limit`     | Gauge       | The limit of API requests the client can make.                   | `api`=&lt;search\|issues&gt;                                                      |
+| `github_api_rate_remaining` | Gauge       | The remaining API requests the client can make until reset time. | `api`=&lt;search\|issues&gt;                                                      |
+| `github_api_rate_reset`     | Gauge       | The time when the current rate limit will reset.                 | `api`=&lt;search\|issues&gt;                                                      |
+| `github_api_requests_total` | Counter     | Number of API operations performed.                              | `api`=&lt;search\|issues&gt;<br>`status`=&lt;The status code of the reponse&gt;   |
+
 ## Releaese
 
 The release process is fully automated by [tagpr](https://github.com/Songmu/tagpr). To release, just merge [the latest release PR](https://github.com/pfnet-research/alertmanager-to-github/pulls?q=is:pr+is:open+label:tagpr).
