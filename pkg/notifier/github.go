@@ -112,7 +112,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 		return err
 	}
 
-	query := fmt.Sprintf(`repo:%s/%s "%s"`, owner, repo, alertID)
+	query := fmt.Sprintf(`repo:%s/%s is:issue "%s"`, owner, repo, alertID)
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 		Sort:      "created",
@@ -243,7 +243,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 }
 
 func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID string) error {
-	query := fmt.Sprintf(`repo:%s/%s "%s"`, owner, repo, alertID)
+	query := fmt.Sprintf(`repo:%s/%s is:issue "%s"`, owner, repo, alertID)
 	searchResult, response, err := n.GitHubClient.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 		Sort:      "created",
