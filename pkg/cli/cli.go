@@ -285,6 +285,18 @@ func templateFromString(s string) (*template.Template, error) {
 	return t, nil
 }
 
+func labelTemplatesFromStrings(labels []string) ([]*template.Template, error) {
+	templates := make([]*template.Template, 0, len(labels))
+	for _, label := range labels {
+		t, err := templateFromString(label)
+		if err != nil {
+			return nil, err
+		}
+		templates = append(templates, t)
+	}
+	return templates, nil
+}
+
 func actionStart(c *cli.Context) error {
 	githubClient, err := func() (*github.Client, error) {
 		appID := c.Int64(flagGitHubAppID)
@@ -343,15 +355,17 @@ func actionStart(c *cli.Context) error {
 		reopenWindow = &d
 	}
 
+	labelTemplates, err := labelTemplatesFromStrings(c.StringSlice(flagLabels))
+	if err != nil {
+		return err
+	}
+
 	nt, err := notifier.NewGitHub()
 	if err != nil {
 		return err
 	}
 	nt.GitHubClient = githubClient
-	nt.Labels = c.StringSlice(flagLabels)
-	if nt.Labels == nil {
-		nt.Labels = []string{}
-	}
+	nt.LabelTemplates = labelTemplates
 	nt.BodyTemplate = bodyTemplate
 	nt.TitleTemplate = titleTemplate
 	nt.AlertIDTemplate = alertIDTemplate

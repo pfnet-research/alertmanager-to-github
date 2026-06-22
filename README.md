@@ -77,7 +77,7 @@ USAGE:
 OPTIONS:
    --listen value                      HTTP listen on (default: ":8080") [$ATG_LISTEN]
    --github-url value                  GitHub Enterprise URL (e.g. https://github.example.com) [$ATG_GITHUB_URL]
-   --labels value [ --labels value ]   Issue labels [$ATG_LABELS]
+   --labels value [ --labels value ]   Issue labels. Each value can be a static string or a Go template [$ATG_LABELS]
    --body-template-file value          Body template file [$ATG_BODY_TEMPLATE_FILE]
    --title-template-file value         Title template file [$ATG_TITLE_TEMPLATE_FILE]
    --alert-id-template value           Alert ID template (default: "{{.Payload.GroupKey}}") [$ATG_ALERT_ID_TEMPLATE]
@@ -105,6 +105,18 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
   - `urlQueryEscape`: Escape a string as a URL query
   - `json`: Marshal an object to JSON string
   - `timeNow`: Get current time
+
+### Customize issue labels
+
+`--labels` values are also rendered from [Go template](https://golang.org/pkg/text/template/). As with issue title and body templates, you can use `.Payload`, `.PreviousIssue`, and the same template functions.
+
+Each `--labels` value must render to a single GitHub label name. If a label should be omitted when a value is missing, write the template so that it renders an empty string. For example:
+
+```shell
+alertmanager-to-github start \
+  --labels='{{ with .Payload.CommonLabels.severity }}severity/{{ . }}{{ end }}' \
+  --labels='team/{{ .Payload.CommonLabels.team }}'
+```
 
 ### Automatically close issues when alerts are resolved
 

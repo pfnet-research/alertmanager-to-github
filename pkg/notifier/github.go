@@ -64,7 +64,7 @@ type GitHubNotifier struct {
 	BodyTemplate            *template.Template
 	TitleTemplate           *template.Template
 	AlertIDTemplate         *template.Template
-	Labels                  []string
+	LabelTemplates          []*template.Template
 	AutoCloseResolvedIssues bool
 	ReopenWindow            *time.Duration
 }
@@ -100,11 +100,6 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	owner, repo, err := resolveRepository(payload, queryParams)
 	if err != nil {
 		return err
-	}
-
-	labels := n.Labels
-	if l := queryParams.Get("labels"); l != "" {
-		labels = strings.Split(l, ",")
 	}
 
 	alertID, err := n.getAlertID(payload)
@@ -167,6 +162,11 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 	// prevent trailing newline characters in the title due to template formatting
 	// newlines in titles prevent Github->Slack webhooks working with issues as of 2022-05-06
 	title = strings.TrimSpace(title)
+
+	labels, err := n.resolveLabels(payload, previousIssue, queryParams)
+	if err != nil {
+		return err
+	}
 
 	req := &github.IssueRequest{
 		Title:  &title,
@@ -306,6 +306,46 @@ func (n *GitHubNotifier) shouldAutoCloseIssue(payload *types.WebhookPayload) boo
 	}
 
 	return !payload.HasSkipAutoCloseAnnotation()
+}
+
+func (n *GitHubNotifier) resolveLabels(
+	payload *types.WebhookPayload,
+	previousIssue *github.Issue,
+	queryParams url.Values,
+) ([]string, error) {
+	if l := queryParams.Get("labels"); l != "" {
+		return normalizeLabels(strings.Split(l, ",")), nil
+	}
+
+	labels := make([]string, 0, len(n.LabelTemplates))
+	for _, labelTemplate := range n.LabelTemplates {
+		label, err := labelTemplate.Execute(payload, previousIssue)
+		if err != nil {
+			return nil, err
+		}
+		labels = append(labels, label)
+	}
+
+	return normalizeLabels(labels), nil
+}
+
+func normalizeLabels(labels []string) []string {
+	normalized := make([]string, 0, len(labels))
+	seen := make(map[string]struct{}, len(labels))
+
+	for _, label := range labels {
+		label = strings.TrimSpace(label)
+		if label == "" {
+			continue
+		}
+		if _, ok := seen[label]; ok {
+			continue
+		}
+		seen[label] = struct{}{}
+		normalized = append(normalized, label)
+	}
+
+	return normalized
 }
 
 func checkSearchResponse(response *github.Response) error {
