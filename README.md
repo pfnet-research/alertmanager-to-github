@@ -100,7 +100,7 @@ Issue title and body are rendered from [Go template](https://golang.org/pkg/text
 
 - Variables
   - `.Payload`: Webhook payload incoming to this receiver. For more information, see `WebhookPayload` in [pkg/types/payload.go](https://github.com/pfnet-research/alertmanager-to-github/blob/master/pkg/types/payload.go)
-  - `.PreviousIssue`: The previous issue with the same alert ID, or `nil` if there is no such issue. For more information, see `Issue` in [github.com/google/go-github/v54/github](https://pkg.go.dev/github.com/google/go-github/v54@v54.0.0/github#Issue). Useful when `--reopen-window` is specified.
+  - `.PreviousIssue`: The previous issue with the same alert ID, or `nil` if there is no such issue. For more information, see `Issue` in [github.com/google/go-github/v88/github](https://pkg.go.dev/github.com/google/go-github/v88@v88.0.0/github#Issue). Useful when `--reopen-window` is specified.
 - Functions
   - `urlQueryEscape`: Escape a string as a URL query
   - `json`: Marshal an object to JSON string

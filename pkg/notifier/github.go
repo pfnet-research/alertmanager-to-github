@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v88/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
@@ -224,7 +224,7 @@ func (n *GitHubNotifier) Notify(ctx context.Context, payload *types.WebhookPaylo
 
 	if desiredState != currentState && canUpdateState {
 		req = &github.IssueRequest{
-			State: github.String(desiredState),
+			State: github.Ptr(desiredState),
 		}
 		issue, response, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
 		if err != nil {
@@ -276,8 +276,8 @@ func (n *GitHubNotifier) cleanupIssues(ctx context.Context, owner, repo, alertID
 			continue
 		}
 		req := &github.IssueRequest{
-			Body:  github.String(fmt.Sprintf("duplicated %s", latestIssue.GetHTMLURL())),
-			State: github.String("closed"),
+			Body:  github.Ptr(fmt.Sprintf("duplicated %s", latestIssue.GetHTMLURL())),
+			State: github.Ptr("closed"),
 		}
 		issue, response, err = n.GitHubClient.Issues.Edit(ctx, owner, repo, issue.GetNumber(), req)
 		if err != nil {
