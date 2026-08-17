@@ -7,7 +7,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v88/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 )
 

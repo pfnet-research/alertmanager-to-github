@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v88/github"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/notifier"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/server"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/template"
 	"github.com/pfnet-research/alertmanager-to-github/pkg/types"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 )
 
@@ -107,16 +107,16 @@ var sampleIssue string
 //go:embed templates/*.tmpl
 var templates embed.FS
 
-func App() *cli.App {
-	return &cli.App{
+func NewCommand() *cli.Command {
+	return &cli.Command{
 		Name:  os.Args[0],
 		Usage: "Webhook receiver Alertmanager to create GitHub issues",
 		Commands: []*cli.Command{
 			{
 				Name:  "start",
 				Usage: "Start webhook HTTP server",
-				Action: func(c *cli.Context) error {
-					if err := actionStart(c); err != nil {
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					if err := actionStart(ctx, cmd); err != nil {
 						return cli.Exit(fmt.Errorf("error: %w", err), 1)
 					}
 					return nil
@@ -126,72 +126,71 @@ func App() *cli.App {
 						Name:    flagListen,
 						Value:   ":8080",
 						Usage:   "HTTP listen on",
-						EnvVars: []string{"ATG_LISTEN"},
+						Sources: cli.EnvVars("ATG_LISTEN"),
 					},
 					&cli.StringFlag{
 						Name:    flagGitHubURL,
 						Usage:   "GitHub Enterprise URL (e.g. https://github.example.com)",
-						EnvVars: []string{"ATG_GITHUB_URL"},
+						Sources: cli.EnvVars("ATG_GITHUB_URL"),
 					},
 					&cli.StringSliceFlag{
 						Name:    flagLabels,
 						Usage:   "Issue labels",
-						EnvVars: []string{"ATG_LABELS"},
+						Sources: cli.EnvVars("ATG_LABELS"),
 					},
 					&cli.StringFlag{
 						Name:    flagBodyTemplateFile,
 						Usage:   "Body template file",
-						EnvVars: []string{"ATG_BODY_TEMPLATE_FILE"},
+						Sources: cli.EnvVars("ATG_BODY_TEMPLATE_FILE"),
 					},
 					&cli.StringFlag{
 						Name:    flagTitleTemplateFile,
 						Usage:   "Title template file",
-						EnvVars: []string{"ATG_TITLE_TEMPLATE_FILE"},
+						Sources: cli.EnvVars("ATG_TITLE_TEMPLATE_FILE"),
 					},
 					&cli.StringFlag{
 						Name:    flagAlertIDTemplate,
 						Value:   "{{.Payload.GroupKey}}",
 						Usage:   "Alert ID template",
-						EnvVars: []string{"ATG_ALERT_ID_TEMPLATE"},
+						Sources: cli.EnvVars("ATG_ALERT_ID_TEMPLATE"),
 					},
 					&cli.Int64Flag{
 						Name:     flagGitHubAppID,
 						Required: false,
 						Usage:    "GitHub App ID",
-						EnvVars:  []string{"ATG_GITHUB_APP_ID"},
+						Sources:  cli.EnvVars("ATG_GITHUB_APP_ID"),
 					},
 					&cli.Int64Flag{
 						Name:     flagGitHubAppInstallationID,
 						Required: false,
 						Usage:    "GitHub App installation ID",
-						EnvVars:  []string{"ATG_GITHUB_APP_INSTALLATION_ID"},
+						Sources:  cli.EnvVars("ATG_GITHUB_APP_INSTALLATION_ID"),
 					},
 					&cli.StringFlag{
 						Name:     flagGitHubAppPrivateKey,
 						Required: false,
 						Usage:    "GitHub App private key (command line argument is not recommended)",
-						EnvVars:  []string{"ATG_GITHUB_APP_PRIVATE_KEY"},
+						Sources:  cli.EnvVars("ATG_GITHUB_APP_PRIVATE_KEY"),
 					},
 					&cli.StringFlag{
 						Name:     flagGitHubToken,
 						Required: false,
 						Usage:    "GitHub API token (command line argument is not recommended)",
-						EnvVars:  []string{"ATG_GITHUB_TOKEN"},
+						Sources:  cli.EnvVars("ATG_GITHUB_TOKEN"),
 					},
 					&cli.BoolFlag{
 						Name:     flagAutoCloseResolvedIssues,
 						Required: false,
 						Value:    true,
 						Usage:    "Should issues be automatically closed when resolved. If alerts have 'atg_skip_auto_close=true' annotation, issues will not be auto-closed.",
-						EnvVars:  []string{"ATG_AUTO_CLOSE_RESOLVED_ISSUES"},
+						Sources:  cli.EnvVars("ATG_AUTO_CLOSE_RESOLVED_ISSUES"),
 					},
-					&noDefaultDurationFlag{
-						cli.DurationFlag{
-							Name:     flagReopenWindow,
-							Required: false,
-							Usage:    "Alerts will create a new issue instead of reopening closed issues if the specified duration has passed",
-							EnvVars:  []string{"ATG_REOPEN_WINDOW"},
-						},
+					&cli.DurationFlag{
+						Name:        flagReopenWindow,
+						Required:    false,
+						Usage:       "Alerts will create a new issue instead of reopening closed issues if the specified duration has passed",
+						HideDefault: true,
+						Sources:     cli.EnvVars("ATG_REOPEN_WINDOW"),
 					},
 				},
 			},
@@ -213,8 +212,8 @@ func App() *cli.App {
 						Usage: "Set `.PreviousIssue` to nil",
 					},
 				},
-				Action: func(c *cli.Context) error {
-					if err := actionTestTemplate(c); err != nil {
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					if err := actionTestTemplate(cmd); err != nil {
 						return cli.Exit(fmt.Errorf("error: %w", err), 1)
 					}
 					return nil
@@ -237,28 +236,27 @@ func buildGitHubClientWithAppCredentials(
 		return nil, err
 	}
 
-	if githubURL == "" {
-		return github.NewClient(&http.Client{Transport: tr}), nil
+	opts := []github.ClientOptionsFunc{github.WithHTTPClient(&http.Client{Transport: tr})}
+	if githubURL != "" {
+		tr.BaseURL = githubURL
+		opts = append(opts, github.WithEnterpriseURLs(githubURL, githubURL))
 	}
-
-	tr.BaseURL = githubURL
-	return github.NewEnterpriseClient(githubURL, githubURL, &http.Client{Transport: tr})
+	return github.NewClient(opts...)
 }
 
-func buildGitHubClientWithToken(githubURL string, token string) (*github.Client, error) {
+func buildGitHubClientWithToken(ctx context.Context, githubURL string, token string) (*github.Client, error) {
 	fmt.Println("Building a GitHub client with token...")
 
-	ctx := context.TODO()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	if githubURL == "" {
-		return github.NewClient(tc), nil
+	opts := []github.ClientOptionsFunc{github.WithHTTPClient(tc)}
+	if githubURL != "" {
+		opts = append(opts, github.WithEnterpriseURLs(githubURL, githubURL))
 	}
-
-	return github.NewEnterpriseClient(githubURL, githubURL, tc)
+	return github.NewClient(opts...)
 }
 
 func templateFromReader(r io.Reader) (*template.Template, error) {
@@ -297,17 +295,17 @@ func labelTemplatesFromStrings(labels []string) ([]*template.Template, error) {
 	return templates, nil
 }
 
-func actionStart(c *cli.Context) error {
+func actionStart(ctx context.Context, cmd *cli.Command) error {
 	githubClient, err := func() (*github.Client, error) {
-		appID := c.Int64(flagGitHubAppID)
-		installationID := c.Int64(flagGitHubAppInstallationID)
-		appKey := c.String(flagGitHubAppPrivateKey)
+		appID := cmd.Int64(flagGitHubAppID)
+		installationID := cmd.Int64(flagGitHubAppInstallationID)
+		appKey := cmd.String(flagGitHubAppPrivateKey)
 		if appID != 0 && installationID != 0 && appKey != "" {
-			return buildGitHubClientWithAppCredentials(c.String(flagGitHubURL), appID, installationID, []byte(appKey))
+			return buildGitHubClientWithAppCredentials(cmd.String(flagGitHubURL), appID, installationID, []byte(appKey))
 		}
 
-		if token := c.String(flagGitHubToken); token != "" {
-			return buildGitHubClientWithToken(c.String(flagGitHubURL), token)
+		if token := cmd.String(flagGitHubToken); token != "" {
+			return buildGitHubClientWithToken(ctx, cmd.String(flagGitHubURL), token)
 		}
 
 		return nil, errors.New("GitHub credentials must be specified")
@@ -316,7 +314,7 @@ func actionStart(c *cli.Context) error {
 		return err
 	}
 
-	bodyReader, err := openReader(c.String(flagBodyTemplateFile), "templates/body.tmpl")
+	bodyReader, err := openReader(cmd.String(flagBodyTemplateFile), "templates/body.tmpl")
 	if err != nil {
 		return err
 	}
@@ -330,7 +328,7 @@ func actionStart(c *cli.Context) error {
 		return err
 	}
 
-	titleReader, err := openReader(c.String(flagTitleTemplateFile), "templates/title.tmpl")
+	titleReader, err := openReader(cmd.String(flagTitleTemplateFile), "templates/title.tmpl")
 	if err != nil {
 		return err
 	}
@@ -344,18 +342,18 @@ func actionStart(c *cli.Context) error {
 		return err
 	}
 
-	alertIDTemplate, err := templateFromString(c.String(flagAlertIDTemplate))
+	alertIDTemplate, err := templateFromString(cmd.String(flagAlertIDTemplate))
 	if err != nil {
 		return err
 	}
 
 	var reopenWindow *time.Duration
-	if c.IsSet(flagReopenWindow) {
-		d := c.Duration(flagReopenWindow)
+	if cmd.IsSet(flagReopenWindow) {
+		d := cmd.Duration(flagReopenWindow)
 		reopenWindow = &d
 	}
 
-	labelTemplates, err := labelTemplatesFromStrings(c.StringSlice(flagLabels))
+	labelTemplates, err := labelTemplatesFromStrings(cmd.StringSlice(flagLabels))
 	if err != nil {
 		return err
 	}
@@ -369,25 +367,25 @@ func actionStart(c *cli.Context) error {
 	nt.BodyTemplate = bodyTemplate
 	nt.TitleTemplate = titleTemplate
 	nt.AlertIDTemplate = alertIDTemplate
-	nt.AutoCloseResolvedIssues = c.Bool(flagAutoCloseResolvedIssues)
+	nt.AutoCloseResolvedIssues = cmd.Bool(flagAutoCloseResolvedIssues)
 	nt.ReopenWindow = reopenWindow
 
 	router := server.New(nt).Router()
-	if err := router.Run(c.String(flagListen)); err != nil {
+	if err := router.Run(cmd.String(flagListen)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func actionTestTemplate(c *cli.Context) error {
-	t, err := templateFromFile(c.String(flagTemplateFile))
+func actionTestTemplate(cmd *cli.Command) error {
+	t, err := templateFromFile(cmd.String(flagTemplateFile))
 	if err != nil {
 		return err
 	}
 
 	payloadData := defaultPayload
-	if path := c.String(flagPayloadFile); path != "" {
+	if path := cmd.String(flagPayloadFile); path != "" {
 		b, err := os.ReadFile(path)
 		if err != nil {
 			return err
@@ -404,7 +402,7 @@ func actionTestTemplate(c *cli.Context) error {
 	}
 
 	var previousIssue *github.Issue
-	if !c.Bool(flagNoPreviousIssue) {
+	if !cmd.Bool(flagNoPreviousIssue) {
 		previousIssue = &github.Issue{}
 		err = json.NewDecoder(strings.NewReader(sampleIssue)).Decode(previousIssue)
 		if err != nil {
