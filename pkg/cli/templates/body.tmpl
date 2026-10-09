@@ -47,7 +47,7 @@ Previous Issue: {{ $previousIssue.HTMLURL }}
             <td>{{index $alert.Labels $key}}</td>
         {{end -}}
         {{range $key := $payload.AnnotationKeysExceptCommon -}}
-            <td>{{index $alert.Labels $key}}</td>
+            <td>{{index $alert.Annotations $key}}</td>
         {{end -}}
         <td>{{$alert.StartsAt}}</td>
         <td><a href="{{$alert.GeneratorURL}}">GeneratorURL</a></td>
